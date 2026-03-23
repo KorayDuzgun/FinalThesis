@@ -1,0 +1,147 @@
+{
+  "experiment": "Phase5_Exp2_Online_Adaptive_CP",
+  "target_coverage": 0.9,
+  "n_test_samples": 9276,
+  "n_cal_samples_initial": 2740,
+  "avg_daily_samples": 391,
+  "methods": {
+    "Static CP": {
+      "MAE": 897.787980685413,
+      "RMSE": 1316.5193292452013,
+      "MAPE": 18.31616683397642,
+      "PICP": 0.6090987494609745,
+      "MPIW": 1528.3115234375,
+      "NMPIW": 0.1369577492102787,
+      "Calibration_Error": 0.2909012505390255,
+      "CWC": 284071.20525089814,
+      "Winkler_Score": 9544.586863949979,
+      "method": "Static CP",
+      "time_seconds": 17.857506036758423,
+      "final_cal_size": 2740
+    },
+    "Online Expanding": {
+      "MAE": 828.604601137491,
+      "RMSE": 1233.4614218250695,
+      "MAPE": 17.05304614856463,
+      "PICP": 0.746226821905994,
+      "MPIW": 2163.8015283582126,
+      "NMPIW": 0.19390640096408393,
+      "Calibration_Error": 0.15377317809400604,
+      "CWC": 423.5777499336089,
+      "Winkler_Score": 7464.967015327694,
+      "method": "Online Expanding",
+      "time_seconds": 34.06277799606323,
+      "final_cal_size": 12016
+    },
+    "Online Sliding-7d": {
+      "MAE": 853.7392563649219,
+      "RMSE": 1269.1923311067912,
+      "MAPE": 17.228876976455222,
+      "PICP": 0.6547003018542475,
+      "MPIW": 1626.317918547992,
+      "NMPIW": 0.14574047123828227,
+      "Calibration_Error": 0.24529969814575248,
+      "CWC": 30917.009722832387,
+      "Winkler_Score": 8728.901480651302,
+      "method": "Online Sliding-7d",
+      "time_seconds": 24.74995493888855,
+      "final_cal_size": 2737
+    },
+    "Online Sliding-14d": {
+      "MAE": 844.0416865511257,
+      "RMSE": 1254.4637060575935,
+      "MAPE": 17.336752827231802,
+      "PICP": 0.7206770159551531,
+      "MPIW": 2018.0930204732813,
+      "NMPIW": 0.18084891302744702,
+      "Calibration_Error": 0.17932298404484692,
+      "CWC": 1416.8388711566754,
+      "Winkler_Score": 7843.198118853847,
+      "method": "Online Sliding-14d",
+      "time_seconds": 29.14434003829956,
+      "final_cal_size": 5474
+    }
+  },
+  "window_sensitivity": [
+    {
+      "Window (days)": 3,
+      "Window (samples)": 1173,
+      "PICP": 0.5086244070720138,
+      "MPIW (s)": 1107.148656610684,
+      "Cal. Error": 0.3913755929279862,
+      "Winkler": 11404.45728178629,
+      "Time (s)": 22.900884866714478
+    },
+    {
+      "Window (days)": 5,
+      "Window (samples)": 1955,
+      "PICP": 0.5886157826649417,
+      "MPIW (s)": 1404.796548873816,
+      "Cal. Error": 0.3113842173350583,
+      "Winkler": 9914.130946940315,
+      "Time (s)": 23.564088106155396
+    },
+    {
+      "Window (days)": 7,
+      "Window (samples)": 2737,
+      "PICP": 0.6547003018542475,
+      "MPIW (s)": 1626.317918547992,
+      "Cal. Error": 0.24529969814575248,
+      "Winkler": 8728.901480651302,
+      "Time (s)": 25.34247398376465
+    },
+    {
+      "Window (days)": 10,
+      "Window (samples)": 3910,
+      "PICP": 0.6889823199655024,
+      "MPIW (s)": 1822.1163721713797,
+      "Cal. Error": 0.2110176800344976,
+      "Winkler": 8280.39892314929,
+      "Time (s)": 26.92089581489563
+    },
+    {
+      "Window (days)": 14,
+      "Window (samples)": 5474,
+      "PICP": 0.7206770159551531,
+      "MPIW (s)": 2018.0930204732813,
+      "Cal. Error": 0.17932298404484692,
+      "Winkler": 7843.198118853847,
+      "Time (s)": 27.914769887924194
+    },
+    {
+      "Window (days)": 21,
+      "Window (samples)": 8211,
+      "PICP": 0.7446097455799914,
+      "MPIW (s)": 2141.1679827257085,
+      "Cal. Error": 0.15539025442000864,
+      "Winkler": 7509.860359379421,
+      "Time (s)": 30.801550149917603
+    }
+  ],
+  "statistical_tests": [
+    {
+      "Comparison": "Online Expanding vs Static CP",
+      "Wilcoxon Stat": 0.0,
+      "p-value": 1.1920928955078125e-07,
+      "Mean PICP Diff": 0.14197807557570538,
+      "95% CI Lower": 0.11522098635732841,
+      "95% CI Upper": 0.16830024587677536
+    },
+    {
+      "Comparison": "Online Sliding-7d vs Static CP",
+      "Wilcoxon Stat": 31.0,
+      "p-value": 0.00027811527252197266,
+      "Mean PICP Diff": 0.048425379953686926,
+      "95% CI Lower": 0.026701423784984697,
+      "95% CI Upper": 0.06967185577641649
+    },
+    {
+      "Comparison": "Online Sliding-14d vs Static CP",
+      "Wilcoxon Stat": 0.0,
+      "p-value": 1.1920928955078125e-07,
+      "Mean PICP Diff": 0.11527109681324661,
+      "95% CI Lower": 0.09360034177944851,
+      "95% CI Upper": 0.13687982425869083
+    }
+  ]
+}

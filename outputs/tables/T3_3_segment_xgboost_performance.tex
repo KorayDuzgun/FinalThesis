@@ -1,0 +1,16 @@
+\begin{table}
+\caption{Segment-Level XGBoost Performance Across Temporal Periods}
+\label{tab:segment_xgboost_performance}
+\begin{tabular}{lrrrr}
+\toprule
+ & MAE (s) & RMSE (s) & MAPE (%) & n_samples \\
+Period &  &  &  &  \\
+\midrule
+Train (W1-W3) & 26.72 & 48.01 & 58.26 & 289331 \\
+Calibration (W4) & 33.73 & 98.31 & 70.69 & 104655 \\
+Test-Near (W5) & 33.69 & 103.08 & 71.84 & 103700 \\
+Test-Mid (W6) & 33.97 & 93.88 & 82.19 & 69537 \\
+Test-Far (W7-W8) & 35.23 & 104.49 & 90.14 & 180575 \\
+\bottomrule
+\end{tabular}
+\end{table}

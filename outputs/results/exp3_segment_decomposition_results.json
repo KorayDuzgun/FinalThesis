@@ -1,0 +1,65 @@
+{
+  "experiment": "Experiment 3: Segment-Level Uncertainty Decomposition",
+  "research_question": "RQ3",
+  "target_coverage": 0.9,
+  "segment_level": {
+    "picp": 0.8526505601845048,
+    "mpiw": 108.3321630913857,
+    "n_test_segments": 353812
+  },
+  "route_level_direct_cp": {
+    "picp": 0.6039241052177663,
+    "mpiw": 1501.3020561273954,
+    "calibration_error": 0.29607589478223373,
+    "winkler": 9619.685916975937
+  },
+  "route_level_aggregated_sum": {
+    "picp": 0.9827511858559724,
+    "mpiw": 4132.084873618946,
+    "calibration_error": 0.08275118585597241,
+    "winkler": 4254.45371580246,
+    "n_trips": 9276
+  },
+  "route_level_bonferroni": {
+    "picp": 1.0,
+    "mpiw": 18122.294917559633,
+    "calibration_error": 0.09999999999999998,
+    "winkler": 18122.294917559633,
+    "n_trips": 9276
+  },
+  "uncertainty_attribution": {
+    "n_unique_segments": 56,
+    "top5_segments": [
+      {
+        "segment": 1,
+        "direction": 1,
+        "mean_width": 227.94148965236278,
+        "mean_fraction": 0.0567369555055107
+      },
+      {
+        "segment": 1,
+        "direction": 2,
+        "mean_width": 227.94148965236275,
+        "mean_fraction": 0.05358821238316797
+      },
+      {
+        "segment": 18,
+        "direction": 1,
+        "mean_width": 179.6543759687829,
+        "mean_fraction": 0.044733495191039085
+      },
+      {
+        "segment": 18,
+        "direction": 2,
+        "mean_width": 179.65437596878286,
+        "mean_fraction": 0.04230665481876773
+      },
+      {
+        "segment": 17,
+        "direction": 1,
+        "mean_width": 164.1997882955465,
+        "mean_fraction": 0.04067645648090521
+      }
+    ]
+  }
+}

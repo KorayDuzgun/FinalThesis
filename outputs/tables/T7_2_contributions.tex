@@ -1,0 +1,14 @@
+\begin{table}
+\caption{Thesis Contributions Summary}
+\label{tab:contributions}
+\begin{tabular}{p{4.5cm}p{5.5cm}p{5.5cm}}
+\toprule
+Contribution & Evidence & Significance \\
+\midrule
+C1: Empirical characterization of conformal prediction under temporal distribution shift in bus transit & Exp1: Static CP coverage degrades from Near to Far test periods; KS tests confirm non-stationarity across weeks & First systematic study of conformal prediction calibration decay in bus transit domain; quantifies the temporal validity horizon \\
+C2: Comparative evaluation of online adaptive conformal methods for transit ETA & Exp2: Online Sliding-7d achieves most stable coverage across all periods; Online Expanding balances adaptivity with sample size & Demonstrates that simple online updates restore coverage guarantees without model retraining; practical for real-time deployment \\
+C3: Segment-level uncertainty decomposition with conformal guarantees & Exp3: Segment Aggregated method enables spatial uncertainty attribution while Bonferroni correction ensures conservative route-level coverage & Novel application of segment-level conformal prediction to transit; enables actionable interpretability for transit operators \\
+C4: Practical framework for uncertainty-aware bus ETA prediction & All experiments: Complete pipeline from data cleaning through conformal prediction with XGBoost, validated on 55 days of real-world Astana bus data & Reproducible methodology applicable to other cities and transit modes; bridges gap between ML uncertainty quantification and transit operations \\
+\bottomrule
+\end{tabular}
+\end{table}

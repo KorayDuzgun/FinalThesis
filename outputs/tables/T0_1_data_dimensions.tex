@@ -1,0 +1,16 @@
+\begin{table}
+\caption{Dataset Dimensions Summary}
+\label{tab:data_dimensions}
+\begin{tabular}{lrrll}
+\toprule
+Dataset & Records & Columns & Date Range & Description \\
+\midrule
+segment_level_data & 785976 & 15 & 2024-07-29 to 2024-09-21 & Actual bus segment traversal records \\
+GTFS trips & 19769 & 7 & 55 services & Scheduled trip metadata \\
+GTFS stop_times & 785976 & 5 & 19769 trips & Scheduled stop arrival/departures \\
+GTFS stops & 201 & 4 & Static & Stop locations with coordinates \\
+GTFS routes & 3 & 5 & Static & Route 10, 12, 46 definitions \\
+GTFS calendar_dates & 55 & 3 & 2024-07-29 to 2024-09-21 & Service calendar (55 active days) \\
+\bottomrule
+\end{tabular}
+\end{table}
