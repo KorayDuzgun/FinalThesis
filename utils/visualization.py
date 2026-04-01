@@ -40,6 +40,14 @@ METHOD_COLORS = {
     'Online Expanding': '#ff7f0e',
     'Online Sliding-7d': '#2ca02c',
     'Online Sliding-14d': '#d62728',
+    # Hourly update variants (Phase 5b)
+    'Hourly Expanding': '#e377c2',
+    'Hourly Sliding-7d': '#17becf',
+    'Hourly Sliding-14d': '#bcbd22',
+    # Daily vs Hourly comparison aliases
+    'Daily Expanding': '#ff7f0e',
+    'Daily Sliding-7d': '#2ca02c',
+    'Daily Sliding-14d': '#d62728',
 }
 
 # Color palette for temporal periods

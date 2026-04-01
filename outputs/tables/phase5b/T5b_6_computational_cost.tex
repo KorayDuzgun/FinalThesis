@@ -1,0 +1,18 @@
+\begin{table}
+\caption{Computational cost: daily vs hourly update frequency.}
+\label{tab:t5b6_computational_cost}
+\begin{tabular}{llrrr}
+\toprule
+ & Update Freq & Total Time (s) & Time/Prediction (ms) & N Updates \\
+Method &  &  &  &  \\
+\midrule
+Static CP & static & 19.189 & 2.069 & 1 \\
+Hourly Expanding & hourly & 176.671 & 19.046 & 426 \\
+Hourly Sliding-7d & hourly & 131.820 & 14.211 & 426 \\
+Hourly Sliding-14d & hourly & 156.958 & 16.921 & 426 \\
+Daily Expanding & daily & 34.063 & 3.672 & 25 \\
+Daily Sliding-7d & daily & 24.750 & 2.668 & 25 \\
+Daily Sliding-14d & daily & 29.144 & 3.142 & 25 \\
+\bottomrule
+\end{tabular}
+\end{table}

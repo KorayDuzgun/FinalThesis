@@ -1,0 +1,131 @@
+{
+  "experiment": "Phase5b_Exp2b_Hourly_Adaptive_CP",
+  "target_coverage": 0.9,
+  "n_test_samples": 9276,
+  "n_cal_samples_initial": 2740,
+  "avg_daily_samples": 391,
+  "n_daily_update_points": 25,
+  "n_hourly_update_points": 426,
+  "methods": {
+    "Static CP": {
+      "MAE": 897.787980685413,
+      "RMSE": 1316.5193292452013,
+      "MAPE": 18.31616683397642,
+      "PICP": 0.6090987494609745,
+      "MPIW": 1528.3115234375,
+      "NMPIW": 0.1369577492102787,
+      "Calibration_Error": 0.2909012505390255,
+      "CWC": 284071.20525089814,
+      "Winkler_Score": 9544.586863949979,
+      "method": "Static CP",
+      "time_seconds": 19.18858790397644,
+      "final_cal_size": 2740
+    },
+    "Hourly Expanding": {
+      "MAE": 795.9585288879737,
+      "RMSE": 1208.3075852165657,
+      "MAPE": 16.11762096513805,
+      "PICP": 0.7608883139284174,
+      "MPIW": 2175.567647377136,
+      "NMPIW": 0.194960807184975,
+      "Calibration_Error": 0.13911168607158264,
+      "CWC": 204.70714910083922,
+      "Winkler_Score": 7211.69900335038,
+      "method": "Hourly Expanding",
+      "time_seconds": 176.6713469028473,
+      "final_cal_size": 12016
+    },
+    "Hourly Sliding-7d": {
+      "MAE": 822.9054509237338,
+      "RMSE": 1257.2176581364213,
+      "MAPE": 16.510399536549436,
+      "PICP": 0.6806813281586891,
+      "MPIW": 1621.7113799851431,
+      "NMPIW": 0.14532766197554828,
+      "Calibration_Error": 0.21931867184131093,
+      "CWC": 8410.082176636304,
+      "Winkler_Score": 8461.771866377698,
+      "method": "Hourly Sliding-7d",
+      "time_seconds": 131.82031512260437,
+      "final_cal_size": 2737
+    },
+    "Hourly Sliding-14d": {
+      "MAE": 808.3107320333977,
+      "RMSE": 1230.7743951101315,
+      "MAPE": 16.31512638965885,
+      "PICP": 0.7436394997843898,
+      "MPIW": 2018.3194231606599,
+      "NMPIW": 0.18086920182459537,
+      "Calibration_Error": 0.1563605002156102,
+      "CWC": 449.639519831355,
+      "Winkler_Score": 7577.633275882907,
+      "method": "Hourly Sliding-14d",
+      "time_seconds": 156.95847511291504,
+      "final_cal_size": 5474
+    }
+  },
+  "daily_vs_hourly": [
+    {
+      "Window": "Expanding",
+      "Daily PICP": 0.746226821905994,
+      "Hourly PICP": 0.7608883139284174,
+      "PICP Diff": 0.014661492022423395,
+      "Daily MPIW (s)": 2163.8015283582126,
+      "Hourly MPIW (s)": 2175.567647377136,
+      "MPIW Diff (s)": 11.766119018923291,
+      "Daily Winkler": 7464.967015327694,
+      "Hourly Winkler": 7211.69900335038,
+      "Winkler Diff": -253.26801197731402
+    },
+    {
+      "Window": "Sliding-7d",
+      "Daily PICP": 0.6547003018542475,
+      "Hourly PICP": 0.6806813281586891,
+      "PICP Diff": 0.025981026304441546,
+      "Daily MPIW (s)": 1626.317918547992,
+      "Hourly MPIW (s)": 1621.7113799851431,
+      "MPIW Diff (s)": -4.606538562848755,
+      "Daily Winkler": 8728.901480651302,
+      "Hourly Winkler": 8461.771866377698,
+      "Winkler Diff": -267.1296142736046
+    },
+    {
+      "Window": "Sliding-14d",
+      "Daily PICP": 0.7206770159551531,
+      "Hourly PICP": 0.7436394997843898,
+      "PICP Diff": 0.022962483829236713,
+      "Daily MPIW (s)": 2018.0930204732813,
+      "Hourly MPIW (s)": 2018.3194231606599,
+      "MPIW Diff (s)": 0.22640268737859515,
+      "Daily Winkler": 7843.198118853847,
+      "Hourly Winkler": 7577.633275882907,
+      "Winkler Diff": -265.56484297093994
+    }
+  ],
+  "statistical_tests": [
+    {
+      "Comparison": "Hourly Expanding vs Daily Expanding",
+      "Wilcoxon Stat": 34.5,
+      "p-value": 0.0009662683527865689,
+      "Mean PICP Diff": 0.014832587345698535,
+      "95% CI Lower": 0.007575425465265785,
+      "95% CI Upper": 0.023225186149080583
+    },
+    {
+      "Comparison": "Hourly Sliding-7d vs Daily Sliding-7d",
+      "Wilcoxon Stat": 24.0,
+      "p-value": 4.5418739318847656e-05,
+      "Mean PICP Diff": 0.02659685261122603,
+      "95% CI Lower": 0.01639891589334864,
+      "95% CI Upper": 0.037622790134627625
+    },
+    {
+      "Comparison": "Hourly Sliding-14d vs Daily Sliding-14d",
+      "Wilcoxon Stat": 13.0,
+      "p-value": 2.09808349609375e-05,
+      "Mean PICP Diff": 0.02334513478203649,
+      "95% CI Lower": 0.0147936709218328,
+      "95% CI Upper": 0.03257585626192868
+    }
+  ]
+}

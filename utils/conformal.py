@@ -278,6 +278,7 @@ def get_online_prediction_intervals(
     update_frequency: int = 1,
     window_size: int = None,
     dates_stream: np.ndarray = None,
+    group_keys_stream: np.ndarray = None,
     verbose: bool = True
 ):
     """Online/adaptive conformal prediction with sequential calibration updates.
@@ -307,6 +308,10 @@ def get_online_prediction_intervals(
         recent samples.
     dates_stream : np.ndarray, optional
         Dates for each sample. If provided, updates happen at each new day.
+    group_keys_stream : array-like, optional
+        Custom grouping keys for each sample (e.g., (date, hour) tuples).
+        If provided, updates happen at each unique key. Takes precedence
+        over dates_stream.
     verbose : bool
         Whether to show progress bar
 
@@ -331,19 +336,22 @@ def get_online_prediction_intervals(
     n_total = len(X_stream)
     low_pct, high_pct = _confidence_to_percentiles(confidence)
 
-    # Determine update points
-    if dates_stream is not None:
-        unique_dates = sorted(set(dates_stream))
-        date_to_indices = {}
-        for i, d in enumerate(dates_stream):
-            if d not in date_to_indices:
-                date_to_indices[d] = []
-            date_to_indices[d].append(i)
+    # Determine update points: group_keys_stream takes precedence over dates_stream
+    keys_stream = group_keys_stream if group_keys_stream is not None else dates_stream
 
-        iterator = tqdm(unique_dates, desc='Online CP (daily)') if verbose else unique_dates
+    if keys_stream is not None:
+        unique_keys = sorted(set(keys_stream))
+        key_to_indices = {}
+        for i, k in enumerate(keys_stream):
+            if k not in key_to_indices:
+                key_to_indices[k] = []
+            key_to_indices[k].append(i)
 
-        for date in iterator:
-            indices = date_to_indices[date]
+        desc = 'Online CP (by key)' if group_keys_stream is not None else 'Online CP (daily)'
+        iterator = tqdm(unique_keys, desc=desc) if verbose else unique_keys
+
+        for key in iterator:
+            indices = key_to_indices[key]
             X_batch = X_stream[indices]
             y_batch = y_stream[indices]
 
