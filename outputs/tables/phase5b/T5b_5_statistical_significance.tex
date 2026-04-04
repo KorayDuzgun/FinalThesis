@@ -1,14 +1,14 @@
 \begin{table}
-\caption{Statistical significance of hourly vs daily update frequency (paired Wilcoxon test on daily PICP).}
-\label{tab:t5b5_hourly_vs_daily_significance}
-\begin{tabular}{lrrrl}
+\caption{Statistical significance of hourly vs daily update frequency (paired Wilcoxon test on daily PICP, Holm-Bonferroni corrected).}
+\label{tab:t5b5_statistical_significance}
+\begin{tabular}{lrrrrl}
 \toprule
- & Wilcoxon Stat & p-value & Mean PICP Diff & 95% CI \\
-Comparison &  &  &  &  \\
+ & Wilcoxon Stat & p-value (raw) & p-value (Holm) & Mean PICP Diff & 95% CI \\
+Comparison &  &  &  &  &  \\
 \midrule
-Hourly Expanding vs Daily Expanding & 34.5000 & 0.0010 & 0.0148 & [+0.0076, +0.0232] \\
-Hourly Sliding-7d vs Daily Sliding-7d & 24.0000 & 0.0000 & 0.0266 & [+0.0164, +0.0376] \\
-Hourly Sliding-14d vs Daily Sliding-14d & 13.0000 & 0.0000 & 0.0233 & [+0.0148, +0.0326] \\
+Hourly Expanding vs Daily Expanding & 34.5000 & 0.0010 & 0.0010 & 0.0148 & [+0.0076, +0.0232] \\
+Hourly Sliding-7d vs Daily Sliding-7d & 24.0000 & 0.0000 & 0.0001 & 0.0266 & [+0.0164, +0.0376] \\
+Hourly Sliding-14d vs Daily Sliding-14d & 13.0000 & 0.0000 & 0.0001 & 0.0233 & [+0.0148, +0.0326] \\
 \bottomrule
 \end{tabular}
 \end{table}

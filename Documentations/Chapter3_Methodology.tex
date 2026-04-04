@@ -1,0 +1,1034 @@
+% ============================================================
+% CHAPTER 3 — METHODOLOGY
+% Uncertainty-Aware Bus ETA Prediction Under Drift
+% with Segment-Level Risk Decomposition
+% ============================================================
+
+\chapter{Methodology}
+\label{ch:methodology}
+
+This chapter describes the complete methodology used in this thesis, from data acquisition and preprocessing to the conformal prediction framework and segment-level uncertainty decomposition. The methodology is designed to address the three research questions outlined in Chapter~1: (RQ1) the effect of temporal distribution shift on static conformal prediction, (RQ2) the benefit of online adaptive conformal calibration, and (RQ3) the feasibility of segment-level uncertainty decomposition for interpretable risk attribution.
+
+The chapter is organized into four sections. Section~\ref{sec:research_design} presents the overall research design, including the framework overview and experimental setup. Section~\ref{sec:data_collection} describes the dataset, preprocessing pipeline, and feature engineering. Section~\ref{sec:proposed_method} details the proposed method, covering the baseline prediction model, conformal prediction framework, and segment-level uncertainty decomposition. Finally, Section~\ref{sec:evaluation_metrics} defines the evaluation metrics used to assess the framework.
+
+
+% ============================================================
+\section{Research Design}
+\label{sec:research_design}
+% ============================================================
+
+This study employs a quantitative experimental research design to investigate the reliability of conformal prediction for bus travel time uncertainty estimation under temporal distribution shift. The research follows a systematic pipeline: data acquisition, preprocessing, feature engineering, point prediction modeling, uncertainty quantification via conformal prediction, and segment-level uncertainty decomposition.
+
+\subsection{Research Framework Overview}
+\label{subsec:framework_overview}
+
+Figure~\ref{fig:framework_overview} presents the overall research framework, which consists of six stages: (1)~data acquisition and exploration, (2)~preprocessing and cleaning, (3)~feature engineering, (4)~baseline point prediction with XGBoost, (5)~conformal prediction for uncertainty quantification, and (6)~segment-level uncertainty decomposition.
+
+% --- FIGURE: Framework Overview ---
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/3_1.png}
+    \caption{End-to-end research framework. Raw bus GPS trajectories are preprocessed and enriched with engineered features. An XGBoost model generates point predictions, which are then wrapped with conformal prediction to produce prediction intervals. Finally, segment-level decomposition attributes route-level uncertainty to individual route segments.}
+    \label{fig:framework_overview}
+\end{figure}
+
+The framework is designed so that each stage feeds directly into the next, and each of the three experiments maps to a specific research question:
+\begin{itemize}
+    \item \textbf{Experiment~1} (RQ1): Evaluates static conformal prediction under temporal distribution shift.
+    \item \textbf{Experiment~2} (RQ2): Compares online adaptive conformal methods against the static baseline.
+    \item \textbf{Experiment~3} (RQ3): Investigates segment-level uncertainty decomposition for spatial risk attribution.
+\end{itemize}
+
+\subsection{Experimental Design}
+\label{subsec:experimental_design}
+
+\subsubsection{Temporal Split Strategy}
+\label{subsubsec:temporal_split}
+
+The dataset is divided into weekly blocks and assigned to specific roles, as shown in Table~\ref{tab:temporal_split}.
+
+\begin{table}[htbp]
+\centering
+\caption{Temporal split strategy for training, calibration, and evaluation.}
+\label{tab:temporal_split}
+\begin{tabular}{llrl}
+\toprule
+\textbf{Period} & \textbf{Weeks} & \textbf{Trips} & \textbf{Purpose} \\
+\midrule
+Training & W1--W3 (Jul~29 -- Aug~18) & 7,598 & XGBoost model training \\
+Calibration & W4 (Aug~19 -- Aug~25) & 2,740 & CP calibration set \\
+Test-Near & W5 (Aug~26 -- Sep~1) & 2,707 & Minimal drift evaluation \\
+Test-Mid & W6 (Sep~2 -- Sep~8)$^\dagger$ & 1,833 & Moderate drift evaluation \\
+Test-Far & W7--W8 (Sep~9 -- Sep~21) & 4,736 & Maximum drift evaluation \\
+\bottomrule
+\multicolumn{4}{l}{\footnotesize $^\dagger$ Excludes anomalous dates Sep~3--4 (5 usable days).}
+\end{tabular}
+\end{table}
+
+The three-level test period design (Near, Mid, Far) creates a natural temporal gradient for measuring coverage degradation under distribution shift. Test-Near is temporally closest to the calibration period and should exhibit minimal drift, while Test-Far is 2--4 weeks away and should exhibit the most pronounced distribution shift.
+
+Figure~\ref{fig:temporal_split} illustrates the temporal split visually.
+
+% --- FIGURE: Temporal Split ---
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/3_2.png}
+    \caption{Temporal split of the 55-day dataset into training (W1--W3), calibration (W4), and three test periods of increasing temporal distance. This design enables systematic evaluation of coverage degradation under distribution shift.}
+    \label{fig:temporal_split}
+\end{figure}
+
+\subsubsection{Experiment~1: Static Conformal Prediction Under Drift (RQ1)}
+\label{subsubsec:exp1_design}
+
+\textbf{Research Question}: \emph{How does temporal distribution shift affect the empirical coverage and interval efficiency of conformal prediction for bus ETA?}
+
+\textbf{Setup}: The pre-trained XGBoost route-level model is calibrated once using W4 data (2,740 samples). Prediction intervals are generated for all test periods (W5--W8) at three confidence levels (80\%, 90\%, 95\%) without any calibration updates. PICP, MPIW, calibration error, and Winkler Score are computed for each test period separately and overall.
+
+\textbf{Expected Outcome}: Coverage should degrade as temporal distance from the calibration period increases, demonstrating that the exchangeability assumption underlying static CP is violated by distribution shift.
+
+\subsubsection{Experiment~2: Online Adaptive Conformal Prediction (RQ2)}
+\label{subsubsec:exp2_design}
+
+\textbf{Research Question}: \emph{To what extent do online conformal methods improve empirical coverage stability and interval efficiency compared to static conformal approaches under drift?}
+
+\textbf{Setup}: The same XGBoost model is used, but the calibration set is updated sequentially. Six online configurations are evaluated:
+\begin{itemize}
+    \item Three window strategies: Expanding, Sliding-7d, Sliding-14d
+    \item Two update frequencies: Daily (25~updates) and Hourly (426~updates)
+\end{itemize}
+
+All six configurations are compared against the static CP baseline from Experiment~1. Statistical significance is assessed using Wilcoxon signed-rank tests on daily PICP values and bootstrap confidence intervals.
+
+\textbf{Expected Outcome}: Online methods should maintain higher and more stable coverage than static CP, at the cost of somewhat wider prediction intervals.
+
+\subsubsection{Experiment~3: Segment-Level Uncertainty Decomposition (RQ3)}
+\label{subsubsec:exp3_design}
+
+\textbf{Research Question}: \emph{Can segment-level decomposition support interpretable uncertainty attribution while preserving reliable route-level calibration?}
+
+\textbf{Setup}: The segment-level XGBoost model is calibrated using normalized conformal prediction with per-segment quantiles. Two route-level aggregation strategies (Simple Summation and Bonferroni Correction) are compared against direct route-level CP. Segment-level uncertainty attribution is computed for all test trips, and structural uncertainty hotspots are identified.
+
+\textbf{Expected Outcome}: Segment-level decomposition should preserve or exceed route-level coverage (since aggregation of individually calibrated segments tends to be conservative), while providing interpretable spatial attribution of uncertainty.
+
+\subsubsection{Experimental Summary}
+
+Table~\ref{tab:experimental_matrix} summarizes the three experiments.
+
+\begin{table}[htbp]
+\centering
+\caption{Summary of the three experiments mapping to the three research questions.}
+\label{tab:experimental_matrix}
+\begin{tabular}{llll}
+\toprule
+& \textbf{Experiment~1} & \textbf{Experiment~2} & \textbf{Experiment~3} \\
+\midrule
+\textbf{Research Q.} & RQ1 & RQ2 & RQ3 \\
+\textbf{Focus} & Coverage under drift & Adaptive calibration & Spatial decomposition \\
+\textbf{Model level} & Route & Route & Segment \\
+\textbf{CP type} & Static & Online (6 variants) & Normalized + aggregation \\
+\textbf{Key metric} & PICP by period & Coverage stability & Attribution validity \\
+\textbf{Baseline} & Nominal coverage & Static CP (Exp.~1) & Direct route CP \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+% ============================================================
+\section{Data Collection}
+\label{sec:data_collection}
+% ============================================================
+
+This section describes the dataset used in this study, the preprocessing pipeline applied to prepare it for modeling, and the feature engineering process that transforms raw observations into informative model inputs.
+
+% ------------------------------------------------------------
+\subsection{Dataset}
+\label{subsec:dataset}
+% ------------------------------------------------------------
+
+\subsubsection{Data Source and Description}
+\label{subsubsec:data_source}
+
+This study uses a publicly available bus trajectory dataset from Astana, Kazakhstan, originally published by Mansurova et al.~\cite{mansurova2025dataset}. The dataset provides segment-level travel time observations derived from real bus GPS traces, structured according to the General Transit Feed Specification (GTFS) format. GTFS is a standardized open data format used worldwide by transit agencies to publish route, stop, and schedule information, making the dataset directly comparable to transit data from other cities.
+
+The raw dataset contains \textbf{785,976 segment-level records} spanning \textbf{55~days} from July~29 to September~21, 2024. Each record represents a single bus traversal of one segment—the portion of a route between two consecutive stops. The dataset covers three bus routes in Astana:
+
+\begin{itemize}
+    \item \textbf{Route~10}: Astana Railway Station $\rightarrow$ International Airport (30.9\% of records, 6,480 trips)
+    \item \textbf{Route~12}: A corridor variant serving a similar area (26.4\% of records, 5,150 trips)
+    \item \textbf{Route~46}: Karasu Street $\rightarrow$ Comfort Town (42.6\% of records, 8,139 trips)
+\end{itemize}
+
+Table~\ref{tab:dataset_schema} shows the key attributes in the dataset. Each record includes timestamps (arrival, departure, start time), travel time measurements (run time and dwell time), and identifiers for the bus, trip, and segment.
+
+\begin{table}[htbp]
+\centering
+\caption{Key attributes in the segment-level bus trajectory dataset.}
+\label{tab:dataset_schema}
+\begin{tabular}{lll}
+\toprule
+\textbf{Attribute} & \textbf{Type} & \textbf{Description} \\
+\midrule
+\texttt{trip\_id} & Integer & Unique identifier for each bus trip \\
+\texttt{segment} & Integer & Segment number within the route \\
+\texttt{direction} & Integer & Route direction (0 or 1) \\
+\texttt{run\_time\_in\_seconds} & Float & Time spent moving between two consecutive stops \\
+\texttt{dwell\_time\_in\_seconds} & Float & Time spent stationary at a stop (boarding/alighting) \\
+\texttt{start\_time} & Timestamp & When the bus began traversing this segment \\
+\texttt{arrival\_time} & Timestamp & When the bus arrived at the segment endpoint \\
+\texttt{departure\_time} & Timestamp & When the bus departed from the segment endpoint \\
+\texttt{deviceid} & Integer & Unique bus vehicle identifier \\
+\texttt{route\_short\_name} & String & Route label (10, 12, or 46) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two key time measurements deserve clarification. \textbf{Run time} (\texttt{run\_time\_in\_seconds}) is the time a bus spends actually moving between two consecutive stops, capturing the effects of traffic congestion, speed limits, and road conditions. \textbf{Dwell time} (\texttt{dwell\_time\_in\_seconds}) is the time a bus spends stationary at a stop for passenger boarding and alighting. Together, these two components form the \textbf{total segment travel time}: the complete time required to traverse one segment from departure at one stop to departure at the next.
+
+The dataset also includes 201 unique stops with geographic coordinates (latitude and longitude) from the GTFS reference tables, enabling spatial analysis of route geometry.
+
+\subsubsection{Dataset Characteristics and Research Motivation}
+\label{subsubsec:dataset_characteristics}
+
+Beyond its role as input data, the dataset exhibits several characteristics that directly motivate the research questions of this thesis. This section presents three key properties—temporal distribution shift, spatial heterogeneity, and heavy-tailed residuals—each of which connects to a specific research question.
+
+\paragraph{Temporal Distribution Shift (Motivation for RQ1 and RQ2).}
+A central premise of this thesis is that bus travel time distributions shift over time, which can degrade the reliability of uncertainty estimates. To verify this premise, we conducted statistical tests on the route-level travel times aggregated by week.
+
+\textbf{Kolmogorov-Smirnov (KS) tests} between consecutive weeks revealed statistically significant shifts for certain transitions (W3$\rightarrow$W4: $p=0.0012$; W7$\rightarrow$W8: $p=0.0063$), while other transitions showed non-significant differences ($p=0.09$--$0.39$). This pattern indicates \emph{gradual, intermittent drift} rather than a single abrupt change—a particularly challenging scenario for static calibration methods.
+
+A \textbf{Kruskal-Wallis test} across all eight weeks confirmed a significant overall distributional difference ($H=31.30$, $p=5.47\times10^{-5}$), establishing that the travel time distribution is non-stationary over the 55-day observation period. This finding directly motivates RQ1 (how does drift affect static conformal prediction?) and RQ2 (can online methods maintain calibration under drift?).
+
+Figure~\ref{fig:weekly_distribution_shift} shows violin plots of route-level travel times across weeks W1--W8, where the training period (W1--W3) shows relatively consistent distributions, while the test periods (W5--W8) exhibit visible changes in shape, spread, and tail behavior.
+
+% --- FIGURE: Weekly Distribution Shift ---
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/3_3.png}
+    \caption{Weekly distribution of route-level travel times (W1--W8). Training weeks (W1--W3, blue) show consistent distributions. Test weeks (W5--W8) exhibit visible shifts in median, spread, and tail behavior, confirming temporal non-stationarity. The calibration week (W4, green) serves as the reference for static conformal prediction.}
+    \label{fig:weekly_distribution_shift}
+\end{figure}
+
+\paragraph{Spatial Heterogeneity Across Segments (Motivation for RQ3).}
+Not all segments along a route contribute equally to travel time variability. Box plot analysis of segment-level run times revealed that certain segments consistently exhibit higher medians and larger interquartile ranges, indicating structurally different traffic conditions (e.g., busy intersections, commercial zones, or infrastructure bottlenecks).
+
+This spatial heterogeneity motivates RQ3: if some segments are inherently more variable than others, then a route-level prediction interval hides important information about \emph{where} the uncertainty originates. Segment-level decomposition can reveal these spatial uncertainty patterns, providing actionable insights for transit operators.
+
+\paragraph{Heavy-Tailed Residuals.}
+The deviation of individual run times from their hourly segment means exhibits extreme positive skewness (10.0) and kurtosis (601.8). This means that large delays are far more common than early arrivals—the distribution has a long right tail. This heavy-tailed behavior makes parametric uncertainty methods (which assume Gaussian errors) unreliable, and directly motivates the use of \emph{distribution-free} conformal prediction methods that make no assumptions about the error distribution.
+
+\subsubsection{Summary Statistics}
+\label{subsubsec:summary_stats}
+
+Table~\ref{tab:dataset_summary} provides an overview of the key statistics for the raw dataset before preprocessing.
+
+\begin{table}[htbp]
+\centering
+\caption{Summary statistics of the raw segment-level dataset.}
+\label{tab:dataset_summary}
+\begin{tabular}{lr}
+\toprule
+\textbf{Statistic} & \textbf{Value} \\
+\midrule
+Total segment records & 785,976 \\
+Total trips & 19,769 \\
+Total unique stops & 201 \\
+Number of routes & 3 \\
+Observation period & Jul 29 -- Sep 21, 2024 (55 days) \\
+Mean segment run time & 105.6~s \\
+Median segment run time & 70.0~s \\
+Mean segment dwell time & 37.9~s \\
+Daily active buses (mean) & $\sim$52 vehicles \\
+Missing values & 0 (across all columns) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ------------------------------------------------------------
+\subsection{Data Preprocessing}
+\label{subsec:preprocessing}
+% ------------------------------------------------------------
+
+The preprocessing pipeline transforms the raw segment-level data into a clean, analysis-ready dataset while preserving the temporal structure required for conformal prediction experiments. The pipeline consists of five stages applied sequentially, as illustrated in Figure~\ref{fig:preprocessing_pipeline}.
+
+% --- FIGURE: Preprocessing Pipeline ---
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/3_4.png}
+    \caption{Data preprocessing pipeline. Each stage filters or transforms the data, with the total record reduction shown at each step. The final output consists of both segment-level and route-level datasets with temporal period labels.}
+    \label{fig:preprocessing_pipeline}
+\end{figure}
+
+\subsubsection{Duplicate Removal}
+\label{subsubsec:duplicate_removal}
+
+The first step checks for and removes exact duplicate records that may arise from data collection artifacts (e.g., duplicate GPS transmissions). In this dataset, no exact duplicates were found, confirming high data collection quality (785,976 records retained).
+
+\subsubsection{Anomalous Date Filtering}
+\label{subsubsec:anomalous_dates}
+
+Daily record count analysis revealed two dates with severely insufficient data due to apparent data collection failures:
+\begin{itemize}
+    \item September~3, 2024: only 3,146 records (vs.\ typical 10,000--18,000 per day)
+    \item September~4, 2024: only 111 records (near-total collection failure)
+\end{itemize}
+
+Dates with fewer than 5,000 records were excluded from all analyses, removing 3,257 records and reducing the observation period from 55 to 53 usable days.
+
+\subsubsection{Outlier Detection and Removal}
+\label{subsubsec:outlier_removal}
+
+Segment run times occasionally contain extreme values (e.g., the maximum observed run time was 19,140~seconds, equivalent to 5.3~hours for a single segment) that likely represent data artifacts rather than genuine travel conditions. To identify and remove such outliers, we used the \textbf{Interquartile Range (IQR)} method.
+
+The IQR is a robust measure of statistical spread, defined as the difference between the 75th percentile ($Q_3$) and the 25th percentile ($Q_1$) of a distribution:
+\begin{equation}
+    \text{IQR} = Q_3 - Q_1
+\end{equation}
+
+A data point is classified as an outlier if it falls outside the range $[Q_1 - 1.5 \times \text{IQR},\ Q_3 + 1.5 \times \text{IQR}]$. The multiplier of 1.5 is a standard threshold that captures approximately 99.3\% of data under a normal distribution, while being robust to the skewed, heavy-tailed distributions typical of travel time data.
+
+A critical design decision was to apply outlier detection \textbf{per segment and per direction}, rather than globally across the entire dataset. This grouping is necessary because different segments have inherently different travel time distributions—a segment passing through a busy intersection naturally has higher run times than one on an open road. Similarly, the same segment can have different characteristics depending on the direction of travel (e.g., uphill vs.\ downhill). Applying a global threshold would either remove too many legitimate observations from high-variance segments or fail to detect outliers in low-variance segments.
+
+Table~\ref{tab:outlier_removal} summarizes the outlier removal results.
+
+\begin{table}[htbp]
+\centering
+\caption{Outlier removal summary using IQR method (threshold = 1.5) applied per segment and direction.}
+\label{tab:outlier_removal}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Stage} & \textbf{Records} & \textbf{Removed} & \textbf{Removal Rate} \\
+\midrule
+Before outlier removal & 782,719 & — & — \\
+After outlier removal & 749,810 & 32,909 & 4.20\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The IQR method was chosen over alternatives such as Z-score filtering because Z-scores assume approximate normality—an assumption that is violated by the heavily right-skewed travel time distributions observed in this dataset.
+
+\subsubsection{Trip Completeness Filtering}
+\label{subsubsec:trip_completeness}
+
+Since route-level travel time is computed by summing all segment times within a trip, incomplete trips (where some segments are missing due to GPS dropouts or early termination) would introduce a downward bias in route-level aggregations. To prevent this, trips with fewer than 30~segments were excluded.
+
+This threshold was determined by analyzing the distribution of segments per trip, which showed that complete trips typically contain 35--55~segments across the three routes. The 30-segment minimum removes clearly incomplete trips while retaining all plausible complete traversals.
+
+This filtering removed 71~trips (2,012~segment records), leaving 19,614~complete trips. After filtering, the mean number of segments per trip was 38.1 (std = 3.04).
+
+\subsubsection{Travel Time Computation and Route-Level Aggregation}
+\label{subsubsec:aggregation}
+
+With the cleaned segment data, two levels of travel time were computed:
+
+\textbf{Segment-level travel time} is the total time to traverse one segment:
+\begin{equation}
+    t_{\text{segment}} = t_{\text{run}} + t_{\text{dwell}}
+\end{equation}
+where $t_{\text{run}}$ is the time spent moving between stops and $t_{\text{dwell}}$ is the time spent stationary at the stop endpoint. Including dwell time is important because it captures operational delays (passenger boarding, traffic signals at stops) that contribute to the overall journey duration experienced by passengers.
+
+\textbf{Route-level travel time} is the total time for a complete trip, computed by summing all segment travel times within that trip:
+\begin{equation}
+    T_{\text{route}} = \sum_{s=1}^{N} t_{\text{segment},s}
+\end{equation}
+where $N$ is the number of segments in the trip. This produces a route-level dataset with one row per trip, containing total travel time, total run time, total dwell time, number of segments, and identifying information (route, direction, date, departure time).
+
+Table~\ref{tab:route_level_stats} shows the route-level travel time statistics after all preprocessing steps.
+
+\begin{table}[htbp]
+\centering
+\caption{Route-level travel time statistics by route and direction after preprocessing.}
+\label{tab:route_level_stats}
+\begin{tabular}{llrrrrrr}
+\toprule
+\textbf{Route} & \textbf{Dir.} & \textbf{Trips} & \textbf{Mean (s)} & \textbf{Std (s)} & \textbf{Median (s)} & \textbf{Min (s)} & \textbf{Max (s)} \\
+\midrule
+10 & 1 & 3,305 & 5,972.7 & 2,082.8 & 5,138.0 & 1,219 & 12,748 \\
+10 & 2 & 3,124 & 4,273.2 & 482.4 & 4,331.5 & 1,768 & 5,727 \\
+12 & 1 & 2,896 & 5,414.3 & 2,067.5 & 4,307.0 & 1,477 & 12,306 \\
+12 & 2 & 2,213 & 3,939.1 & 411.2 & 3,960.0 & 1,974 & 8,151 \\
+46 & 1 & 3,919 & 5,637.3 & 2,010.9 & 5,004.0 & 1,428 & 13,028 \\
+46 & 2 & 4,157 & 4,585.5 & 704.5 & 4,725.0 & 1,601 & 6,717 \\
+\midrule
+\textbf{All} & \textbf{—} & \textbf{19,614} & \textbf{5,029.1} & \textbf{1,686.3} & \textbf{4,496.0} & \textbf{1,219} & \textbf{13,028} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A notable observation is that Direction~1 consistently shows higher variability (std $\approx$ 2,000~s) compared to Direction~2 (std $\approx$ 400--700~s) across all routes, suggesting that one direction of travel is more susceptible to traffic variability.
+
+\subsubsection{Preprocessing Summary}
+\label{subsubsec:preprocessing_summary}
+
+Table~\ref{tab:preprocessing_summary} summarizes the overall data reduction through the preprocessing pipeline.
+
+\begin{table}[htbp]
+\centering
+\caption{Record counts through each preprocessing stage.}
+\label{tab:preprocessing_summary}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Stage} & \textbf{Records} & \textbf{Removed} \\
+\midrule
+Raw dataset & 785,976 & — \\
+After duplicate removal & 785,976 & 0 \\
+After anomalous date filtering & 782,719 & 3,257 \\
+After IQR outlier removal & 749,810 & 32,909 \\
+After trip completeness filtering & 747,798 & 2,012 \\
+\midrule
+\textbf{Final dataset} & \textbf{747,798} & \textbf{38,178 (4.86\%)} \\
+\textbf{Final trips} & \textbf{19,614} & — \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The total data loss of 4.86\% is modest, and the remaining 747,798 segment records across 19,614 trips provide a substantial dataset for model training, calibration, and evaluation.
+
+% ------------------------------------------------------------
+\subsection{Feature Engineering}
+\label{subsec:feature_engineering}
+% ------------------------------------------------------------
+
+Feature engineering transforms the raw cleaned data into informative input variables for the prediction model. All features are computed using only information available at prediction time, with strict temporal boundaries to prevent future information leakage—a requirement that is particularly important for maintaining the validity of conformal prediction guarantees.
+
+The features fall into five categories: temporal, spatial/route context, historical statistics, cumulative trip progress, and preceding segment lags. The following sections describe each category.
+
+\subsubsection{Temporal Features}
+\label{subsubsec:temporal_features}
+
+Temporal features capture the time-of-day and day-of-week patterns that strongly influence bus travel times (e.g., rush hour congestion, weekend vs.\ weekday patterns).
+
+\textbf{Raw temporal features} are extracted directly from the departure timestamp:
+\begin{itemize}
+    \item \texttt{hour\_of\_day} (0--23): Hour of departure
+    \item \texttt{minute\_of\_day} (0--1439): Fine-grained time ($\text{hour} \times 60 + \text{minute}$)
+    \item \texttt{day\_of\_week} (0--6): Day of week (0 = Monday, 6 = Sunday)
+    \item \texttt{is\_weekend} (0/1): Binary indicator for Saturday or Sunday
+\end{itemize}
+
+\textbf{Cyclical encodings} address the problem that raw integer representations create artificial discontinuities at period boundaries. For example, hour~23 and hour~0 are numerically distant (difference of 23) despite being temporally adjacent (1~hour apart). Cyclical encoding projects each temporal variable onto a unit circle using sine and cosine transformations:
+\begin{equation}
+    \texttt{hour\_sin} = \sin\!\left(\frac{2\pi \cdot \text{hour}}{24}\right), \quad
+    \texttt{hour\_cos} = \cos\!\left(\frac{2\pi \cdot \text{hour}}{24}\right)
+\end{equation}
+\begin{equation}
+    \texttt{dow\_sin} = \sin\!\left(\frac{2\pi \cdot \text{day\_of\_week}}{7}\right), \quad
+    \texttt{dow\_cos} = \cos\!\left(\frac{2\pi \cdot \text{day\_of\_week}}{7}\right)
+\end{equation}
+
+This encoding ensures that temporally adjacent hours and days have similar feature values regardless of where they fall in the integer range.
+
+Additionally, a \textbf{time period classification} groups hours into six operationally meaningful categories: early morning (5:00--7:00), morning peak (7:00--10:00), midday (10:00--16:00), evening peak (16:00--19:00), evening (19:00--22:00), and night (22:00--5:00). This categorical variable is used as a grouping key for computing historical statistics (Section~\ref{subsubsec:historical_features}).
+
+\subsubsection{Spatial and Route Context Features}
+\label{subsubsec:spatial_features}
+
+Spatial features encode the route identity and, for segment-level models, the position of each segment within the route:
+\begin{itemize}
+    \item \texttt{route\_id\_encoded}: Label-encoded route identifier (Route~10 $\rightarrow$ 0, Route~12 $\rightarrow$ 1, Route~46 $\rightarrow$ 2)
+    \item \texttt{direction\_encoded}: Binary direction indicator (0 or 1)
+    \item \texttt{segment\_number\_normalized} (segment-level only): Segment position normalized to $[0, 1]$, representing relative progress along the route
+    \item \texttt{total\_route\_segments} (segment-level only): Total number of segments in the current trip
+\end{itemize}
+
+\subsubsection{Historical Statistics Features}
+\label{subsubsec:historical_features}
+
+Historical statistics provide the model with information about recent travel time patterns for the same route segment, direction, and time period. These features are computed using a \textbf{strictly past-only 7-day lookback window}: for a trip on date $d$, historical statistics are computed from observations in the interval $[d-7, d)$, ensuring no future information leaks into the features.
+
+The 7-day lookback was chosen to align with the weekly seasonality pattern identified during data exploration (Section~\ref{subsubsec:dataset_characteristics}), ensuring that the model sees at least one complete weekly cycle of traffic patterns.
+
+\textbf{Route-level historical features} (6 features) are computed for each combination of (route, direction, time period):
+\begin{itemize}
+    \item \texttt{hist\_route\_mean}, \texttt{hist\_route\_std}: Mean and standard deviation of route travel time
+    \item \texttt{hist\_route\_median}: Median route travel time
+    \item \texttt{hist\_route\_q25}, \texttt{hist\_route\_q75}: 25th and 75th percentiles
+    \item \texttt{hist\_route\_count}: Number of historical observations (a confidence indicator)
+\end{itemize}
+
+\textbf{Segment-level historical features} (6 features) follow the same structure but are computed per (segment, direction, time period) combination, using \texttt{run\_time\_in\_seconds} as the target variable.
+
+For trips in the first week (where no 7-day history exists), global dataset-wide statistics are used as fallback values, and the \texttt{count} feature is set to zero to signal reduced confidence.
+
+\subsubsection{Cumulative Trip Progress Features (Segment-Level)}
+\label{subsubsec:cumulative_features}
+
+For segment-level prediction, three features capture the state of the trip up to the current segment:
+\begin{itemize}
+    \item \texttt{cumulative\_time\_so\_far}: Sum of all preceding segment travel times (0 for the first segment)
+    \item \texttt{segments\_completed}: Number of segments already traversed (0 for the first segment)
+    \item \texttt{fraction\_route\_completed}: Proportion of route completed ($= \texttt{segments\_completed} / \texttt{total\_route\_segments}$)
+\end{itemize}
+
+These features allow the model to leverage real-time trip information: if earlier segments experienced delays, this information is propagated forward to improve predictions for subsequent segments.
+
+\subsubsection{Preceding Segment Lag Features (Segment-Level)}
+\label{subsubsec:lag_features}
+
+To capture the autoregressive structure of traffic conditions along a route, four lag features are computed from the immediately preceding segments:
+\begin{itemize}
+    \item \texttt{prev\_seg\_run\_time}: Run time of segment $n-1$
+    \item \texttt{prev\_seg\_dwell\_time}: Dwell time of segment $n-1$
+    \item \texttt{prev\_2\_seg\_avg\_run\_time}: Average run time of segments $n-1$ and $n-2$
+    \item \texttt{prev\_3\_seg\_avg\_run\_time}: Average run time of segments $n-1$, $n-2$, and $n-3$
+\end{itemize}
+
+For the first segments in a trip where no preceding data exists, missing values are filled with the column mean, which is a conservative imputation that avoids introducing bias.
+
+\subsubsection{Feature Summary}
+\label{subsubsec:feature_summary}
+
+Table~\ref{tab:feature_summary} summarizes the complete feature sets used for route-level and segment-level models.
+
+\begin{table}[htbp]
+\centering
+\caption{Summary of engineered features for route-level and segment-level models.}
+\label{tab:feature_summary}
+\begin{tabular}{llcc}
+\toprule
+\textbf{Category} & \textbf{Features} & \textbf{Route} & \textbf{Segment} \\
+\midrule
+Temporal (raw) & hour\_of\_day, minute\_of\_day, day\_of\_week, is\_weekend & \checkmark & \checkmark \\
+Temporal (cyclical) & hour\_sin, hour\_cos, dow\_sin, dow\_cos & \checkmark & \checkmark \\
+Spatial/Route & route\_id\_encoded, direction\_encoded & \checkmark & \checkmark \\
+Spatial (segment) & segment, segment\_number\_normalized, total\_route\_segments & — & \checkmark \\
+Historical (route) & hist\_route\_\{mean, std, median, q25, q75, count\} & \checkmark & — \\
+Historical (segment) & hist\_seg\_\{mean, std, median, q25, q75, count\} & — & \checkmark \\
+Trip progress & cumulative\_time\_so\_far, segments\_completed, fraction\_route\_completed & — & \checkmark \\
+Preceding lags & prev\_seg\_run\_time, prev\_seg\_dwell\_time, prev\_2/3\_seg\_avg\_run\_time & — & \checkmark \\
+\midrule
+\textbf{Total features} & & \textbf{16} & \textbf{26} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No normalization or scaling was applied to the features, since the XGBoost algorithm used for point prediction (Section~\ref{subsec:baseline_model}) is a tree-based method that is inherently invariant to feature scales.
+
+
+% ============================================================
+\section{Proposed Method}
+\label{sec:proposed_method}
+% ============================================================
+
+This section presents the proposed uncertainty-aware prediction framework, which consists of three components: (1)~a baseline XGBoost model for point prediction, (2)~a conformal prediction layer for generating prediction intervals with coverage guarantees, and (3)~a segment-level uncertainty decomposition mechanism for spatial risk attribution.
+
+% ------------------------------------------------------------
+\subsection{Baseline Point Prediction Model}
+\label{subsec:baseline_model}
+% ------------------------------------------------------------
+
+The baseline prediction model provides the point estimates around which conformal prediction intervals are constructed. The model choice is deliberately practical rather than state-of-the-art: the purpose of the baseline is not to achieve the highest possible prediction accuracy, but to provide a stable, well-calibrated point predictor whose residuals (prediction errors) serve as nonconformity scores for the conformal prediction framework.
+
+\subsubsection{Model Selection: XGBoost}
+\label{subsubsec:model_selection}
+
+XGBoost (eXtreme Gradient Boosting)~\cite{chen2016xgboost} was selected as the baseline model for several reasons:
+\begin{enumerate}
+    \item \textbf{Strong baseline performance}: XGBoost and similar gradient boosting methods have been shown to deliver competitive results for bus arrival time prediction, particularly in data-constrained environments~\cite{kam2023boosting}.
+    \item \textbf{Computational efficiency}: Tree-based models train quickly compared to deep learning alternatives, enabling extensive hyperparameter search.
+    \item \textbf{Feature handling}: XGBoost natively handles mixed feature types, missing values, and nonlinear relationships without requiring feature scaling.
+    \item \textbf{Interpretability}: Built-in feature importance provides insight into which inputs drive predictions.
+\end{enumerate}
+
+Two separate XGBoost models were trained: a \textbf{route-level model} predicting total trip travel time (\texttt{total\_travel\_time\_seconds}) from 16~features, and a \textbf{segment-level model} predicting individual segment run time (\texttt{run\_time\_in\_seconds}) from 26~features. The route-level model is the primary model used for Experiments~1 and~2, while the segment-level model is used for Experiment~3.
+
+\subsubsection{Hyperparameter Tuning}
+\label{subsubsec:hyperparameter_tuning}
+
+Hyperparameters were optimized using \textbf{Randomized Search Cross-Validation} with 50~random configurations sampled from the search space shown in Table~\ref{tab:hyperparam_search}.
+
+\begin{table}[htbp]
+\centering
+\caption{Hyperparameter search space for XGBoost (1,296 total combinations; 50 sampled).}
+\label{tab:hyperparam_search}
+\begin{tabular}{ll}
+\toprule
+\textbf{Hyperparameter} & \textbf{Search Values} \\
+\midrule
+\texttt{n\_estimators} & \{200, 500, 1000\} \\
+\texttt{max\_depth} & \{4, 6, 8\} \\
+\texttt{learning\_rate} & \{0.01, 0.05, 0.1\} \\
+\texttt{min\_child\_weight} & \{3, 5, 10\} \\
+\texttt{subsample} & \{0.8, 0.9\} \\
+\texttt{colsample\_bytree} & \{0.8, 0.9\} \\
+\texttt{reg\_alpha} (L1) & \{0, 0.1\} \\
+\texttt{reg\_lambda} (L2) & \{1, 5\} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Cross-validation strategy.} Instead of standard random $k$-fold cross-validation, we used \textbf{forward-chaining (expanding window) temporal cross-validation} with two folds:
+\begin{itemize}
+    \item \textbf{Fold~1}: Train on W1 $\rightarrow$ Validate on W2
+    \item \textbf{Fold~2}: Train on W1--W2 $\rightarrow$ Validate on W3
+\end{itemize}
+
+This approach respects the temporal ordering of the data and prevents future information from leaking into training folds—a common pitfall in time series cross-validation that produces overly optimistic error estimates. The scoring metric was Mean Absolute Error (MAE).
+
+Table~\ref{tab:best_hyperparams} shows the best hyperparameters found for each model.
+
+\begin{table}[htbp]
+\centering
+\caption{Best hyperparameters selected by randomized search for route-level and segment-level models.}
+\label{tab:best_hyperparams}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Hyperparameter} & \textbf{Route Model} & \textbf{Segment Model} \\
+\midrule
+\texttt{n\_estimators} & 200 & 1,000 \\
+\texttt{max\_depth} & 8 & 8 \\
+\texttt{learning\_rate} & 0.05 & 0.05 \\
+\texttt{min\_child\_weight} & 3 & 3 \\
+\texttt{subsample} & 0.9 & 0.9 \\
+\texttt{colsample\_bytree} & 0.8 & 0.9 \\
+\texttt{reg\_alpha} & 0.0 & 0.1 \\
+\texttt{reg\_lambda} & 5 & 5 \\
+Objective & \multicolumn{2}{c}{\texttt{reg:squarederror}} \\
+Tree method & \multicolumn{2}{c}{\texttt{hist}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+After hyperparameter selection, the final models were retrained on the full training set (W1--W3: 7,598 route-level trips; 289,331 segment-level records).
+
+\subsubsection{Model Performance}
+\label{subsubsec:model_performance}
+
+Table~\ref{tab:model_performance} shows the route-level model's performance across temporal periods.
+
+\begin{table}[htbp]
+\centering
+\caption{Route-level XGBoost performance across temporal periods (W1--W3 training, W4 calibration, W5--W8 test).}
+\label{tab:model_performance}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Period} & \textbf{MAE (s)} & \textbf{RMSE (s)} & \textbf{MAPE (\%)} & \textbf{Samples} \\
+\midrule
+Train (W1--W3) & 511.65 & 771.89 & 8.72 & 7,598 \\
+Calibration (W4) & 816.54 & 1,223.56 & 13.42 & 2,740 \\
+Test-Near (W5) & 789.42 & 1,184.61 & 12.95 & 2,707 \\
+Test-Mid (W6) & 845.23 & 1,267.82 & 13.87 & 1,833 \\
+Test-Far (W7--W8) & 912.68 & 1,368.45 & 14.98 & 4,736 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two important observations emerge from these results:
+
+\textbf{Temporal drift confirmation.} MAE increases monotonically from Test-Near (789.42~s) to Test-Far (912.68~s), a 15.6\% increase. This growing error with temporal distance confirms the distribution shift identified in Section~\ref{subsubsec:dataset_characteristics} and demonstrates that the model's accuracy degrades over time—further motivating the need for adaptive uncertainty estimation.
+
+\textbf{Heteroscedastic residuals.} Residual analysis revealed that prediction error variance increases with the predicted value: trips with longer predicted travel times have larger absolute errors. This heteroscedasticity means that fixed-width prediction intervals (a property of basic split conformal prediction) will be too narrow for long trips and too wide for short ones. Additionally, peak-hour MAE ($\approx$950~s) was approximately 1.36$\times$ higher than off-peak MAE ($\approx$700~s), indicating time-dependent error structure.
+
+Table~\ref{tab:segment_performance} shows the segment-level model's performance, which follows a similar temporal degradation pattern.
+
+\begin{table}[htbp]
+\centering
+\caption{Segment-level XGBoost performance across temporal periods.}
+\label{tab:segment_performance}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Period} & \textbf{MAE (s)} & \textbf{RMSE (s)} & \textbf{MAPE (\%)} & \textbf{Samples} \\
+\midrule
+Train (W1--W3) & 23.45 & 42.17 & 11.23 & 289,331 \\
+Calibration (W4) & 32.67 & 58.92 & 15.47 & 104,655 \\
+Test-Near (W5) & 31.84 & 56.78 & 15.12 & 103,700 \\
+Test-Mid (W6) & 34.12 & 61.45 & 16.23 & 69,537 \\
+Test-Far (W7--W8) & 38.19 & 68.34 & 18.15 & 180,575 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The segment-level MAE increases by 20.0\% from Test-Near (31.84~s) to Test-Far (38.19~s), confirming that temporal drift affects both route-level and segment-level predictions. Across individual segments, MAE ranges from 10.67~s to 334.33~s, reflecting the spatial heterogeneity that motivates the segment-level uncertainty decomposition in Experiment~3.
+
+\subsubsection{Feature Importance}
+\label{subsubsec:feature_importance}
+
+Feature importance analysis revealed that \textbf{historical route statistics} (particularly \texttt{hist\_route\_mean} and \texttt{hist\_route\_median}) are the most influential features, confirming that recent historical performance is the strongest predictor of future travel time. Time-of-day features (\texttt{hour\_of\_day}, cyclical encodings) provided secondary importance, capturing systematic daily traffic patterns. Route and direction identifiers also contributed, reflecting the structural differences between routes documented in Table~\ref{tab:route_level_stats}.
+
+% ------------------------------------------------------------
+\subsection{Conformal Prediction Framework}
+\label{subsec:conformal_prediction}
+% ------------------------------------------------------------
+
+Conformal prediction (CP) is the core methodological contribution of this thesis. Unlike traditional point predictions that provide a single estimated value, CP generates \emph{prediction intervals}—ranges within which the true value is expected to fall with a specified probability. The key advantage of CP over other uncertainty estimation approaches is that it provides \textbf{distribution-free, finite-sample coverage guarantees}: the prediction intervals are guaranteed to contain the true value at least $(1-\alpha) \times 100\%$ of the time, without making any assumptions about the distribution of errors.
+
+This section first introduces the theoretical foundations of conformal prediction, then describes the two variants used in this thesis: static (split) conformal prediction and online adaptive conformal prediction.
+
+\subsubsection{Theoretical Foundations}
+\label{subsubsec:cp_theory}
+
+\paragraph{Nonconformity Scores.}
+The central concept in conformal prediction is the \textbf{nonconformity score}, which measures how ``unusual'' a prediction is compared to the calibration data. For regression, a common choice is the absolute residual:
+\begin{equation}
+    R_i = |y_i - \hat{y}_i|
+    \label{eq:nonconformity}
+\end{equation}
+where $y_i$ is the true value and $\hat{y}_i$ is the model's point prediction for calibration sample $i$. Larger nonconformity scores indicate predictions that deviate more from the true values.
+
+\paragraph{Coverage Guarantee.}
+Given a set of $n$ calibration samples with nonconformity scores $\{R_1, R_2, \ldots, R_n\}$, conformal prediction computes a quantile threshold:
+\begin{equation}
+    \hat{q} = \text{Quantile}\left(\{R_1, \ldots, R_n\},\; \frac{\lceil (n+1)(1-\alpha) \rceil}{n}\right)
+    \label{eq:quantile}
+\end{equation}
+where $\alpha$ is the desired significance level (e.g., $\alpha = 0.10$ for 90\% coverage). The prediction interval for a new test sample is then:
+\begin{equation}
+    C(x_{\text{new}}) = \left[\hat{y}_{\text{new}} - \hat{q},\; \hat{y}_{\text{new}} + \hat{q}\right]
+    \label{eq:interval}
+\end{equation}
+
+Under the assumption that calibration and test data are \textbf{exchangeable} (informally, that they come from the same distribution), conformal prediction guarantees:
+\begin{equation}
+    P\!\left(y_{\text{new}} \in C(x_{\text{new}})\right) \geq 1 - \alpha
+    \label{eq:coverage_guarantee}
+\end{equation}
+
+This guarantee holds for any model, any data distribution, and any finite sample size—it requires only the exchangeability assumption. However, when the data distribution shifts over time (as demonstrated in Section~\ref{subsubsec:dataset_characteristics}), the exchangeability assumption is violated, and the coverage guarantee may no longer hold. Investigating this breakdown is the focus of RQ1.
+
+\paragraph{Split Conformal Prediction.}
+This thesis uses the \textbf{split conformal prediction} variant, which divides the available data into three disjoint sets: training (for model fitting), calibration (for computing nonconformity scores), and test (for evaluation). This separation ensures that the calibration scores are computed on data that the model has not seen during training, producing honest residuals that reflect the model's true prediction quality.
+
+\paragraph{Conformal Predictive Distributions.}
+Beyond prediction intervals, conformal prediction can produce \textbf{conformal predictive distributions (CPDs)}, which assign a calibrated probability to any threshold query of the form $P(y < t)$. Given a new test sample with point prediction $\hat{y}$ and the set of calibration residuals $\{r_1, \ldots, r_n\}$ where $r_i = y_i - \hat{y}_i$ (signed residuals), the conformal p-value for a threshold $t$ is:
+\begin{equation}
+    p(t) = \frac{|\{i : \hat{y} + r_i \leq t\}|}{n + 1}
+    \label{eq:cpd}
+\end{equation}
+
+This produces a step function over $t$ that represents the cumulative distribution of the predicted travel time. CPDs enable operationally relevant queries such as \emph{``What is the probability that this trip will exceed 90 minutes?''} ($= 1 - p(5400)$) or \emph{``What is the probability of a delay exceeding 15 minutes beyond the point prediction?''} ($= 1 - p(\hat{y} + 900)$). The CPD is implemented via the \texttt{crepes.ConformalPredictiveSystem} class, which is the underlying engine used by the \texttt{calibrated\_explanations} library.
+
+Figure~\ref{fig:cpd_visualization} illustrates a CPD for a single test sample, showing how different threshold queries (e.g., $P(y < 75~\text{min})$, $P(y < 90~\text{min})$, $P(y < 105~\text{min})$) can be read directly from the step function, along with example operational use cases.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/3.8.png}
+    \caption{Conformal predictive distribution (CPD) for a single test sample. \textbf{Left}: The CPD step function $p(t) = P(y < t)$, with three threshold queries marked. The 90\% prediction interval corresponds to the range between the 5th and 95th percentiles of the distribution. \textbf{Right}: Example operational queries that CPDs enable, translating statistical uncertainty into actionable transit decisions.}
+    \label{fig:cpd_visualization}
+\end{figure}
+
+Figure~\ref{fig:cp_visualization} illustrates the complete split conformal prediction process: from training the model and computing calibration residuals to extracting the quantile threshold and forming prediction intervals on test data.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/3_5.png}
+    \caption{Split conformal prediction process. \textbf{Top}: The four-step pipeline — train the model, compute absolute residuals on calibration data, extract the 90th percentile quantile $\hat{q}$, and form symmetric intervals $[\hat{y} - \hat{q},\; \hat{y} + \hat{q}]$. \textbf{Bottom-left}: Distribution of calibration residuals with the quantile threshold marked. \textbf{Bottom-right}: Resulting prediction intervals on test samples, with covered (green) and uncovered (red) true values.}
+    \label{fig:cp_visualization}
+\end{figure}
+
+\subsubsection{Static Conformal Prediction (Experiment~1)}
+\label{subsubsec:static_cp}
+
+In static (or ``offline'') conformal prediction, the calibration set is fixed and never updated after the initial computation. This is the simplest form of conformal prediction and serves as the baseline approach in this thesis.
+
+\paragraph{Implementation.}
+The static CP implementation follows these steps:
+\begin{enumerate}
+    \item Train XGBoost on the training set (W1--W3).
+    \item Compute point predictions on the calibration set (W4, $n = 2{,}740$ samples).
+    \item Calculate nonconformity scores: $R_i = |y_i - \hat{y}_i|$ for each calibration sample.
+    \item Compute the quantile threshold $\hat{q}$ at level $\lceil (n+1)(1-\alpha) \rceil / n$ (Equation~\ref{eq:quantile}).
+    \item For each test sample, form the interval $[\hat{y} - \hat{q},\; \hat{y} + \hat{q}]$.
+\end{enumerate}
+
+Algorithm~\ref{alg:static_cp} provides the pseudocode.
+
+\begin{algorithm}[htbp]
+\caption{Static (Split) Conformal Prediction}
+\label{alg:static_cp}
+\begin{algorithmic}[1]
+\REQUIRE Trained model $f$, calibration data $(X_{\text{cal}}, y_{\text{cal}})$, test data $X_{\text{test}}$, significance level $\alpha$
+\ENSURE Prediction intervals $\{[\ell_j, u_j]\}_{j=1}^{m}$
+\STATE $\hat{y}_{\text{cal}} \leftarrow f(X_{\text{cal}})$ \COMMENT{Calibration predictions}
+\STATE $R_i \leftarrow |y_{\text{cal},i} - \hat{y}_{\text{cal},i}|$ for $i = 1, \ldots, n$ \COMMENT{Nonconformity scores}
+\STATE $q \leftarrow \lceil (n+1)(1-\alpha) \rceil / n$
+\STATE $\hat{q} \leftarrow \text{Quantile}(\{R_1, \ldots, R_n\}, q)$ \COMMENT{Threshold}
+\FOR{$j = 1, \ldots, m$}
+    \STATE $\hat{y}_j \leftarrow f(x_{\text{test},j})$
+    \STATE $\ell_j \leftarrow \hat{y}_j - \hat{q}$
+    \STATE $u_j \leftarrow \hat{y}_j + \hat{q}$
+\ENDFOR
+\RETURN $\{[\ell_j, u_j]\}_{j=1}^{m}$
+\end{algorithmic}
+\end{algorithm}
+
+A key characteristic of static CP is that all test samples receive \textbf{the same interval width} ($2\hat{q}$), regardless of when or where the prediction is made. This constant width is a direct consequence of using a fixed calibration set and a single quantile threshold.
+
+\paragraph{Experimental Setup.}
+Static CP was evaluated at three confidence levels (80\%, 90\%, 95\%) across three test periods of increasing temporal distance from the calibration week:
+\begin{itemize}
+    \item \textbf{Test-Near} (W5): 1--7 days after calibration, minimal expected drift
+    \item \textbf{Test-Mid} (W6): 8--14 days after calibration, moderate expected drift
+    \item \textbf{Test-Far} (W7--W8): 15--27 days after calibration, maximum expected drift
+\end{itemize}
+
+This design creates a natural gradient for measuring how coverage degrades as the temporal distance from the calibration set increases. The primary confidence level used throughout this thesis is 90\% ($\alpha = 0.10$).
+
+The implementation uses the \texttt{calibrated\_explanations} Python library~\cite{lofstrom2024calibrated}, specifically the \texttt{WrapCalibratedExplainer} class, which wraps the pre-trained XGBoost model and provides methods for generating calibrated prediction intervals.
+
+\subsubsection{Online Adaptive Conformal Prediction (Experiment~2)}
+\label{subsubsec:online_cp}
+
+When the data distribution changes over time, the fixed calibration set used by static CP becomes stale, and the coverage guarantee degrades. Online adaptive conformal prediction addresses this by \textbf{continuously updating the calibration set} with newly observed data, allowing the nonconformity quantile to adapt to the current distribution.
+
+\paragraph{Core Mechanism.}
+The key difference from static CP is that after generating predictions for each batch of test samples and observing their true values, the calibration set is updated before the next batch. The model itself is \textbf{never retrained}—only the calibration set management changes.
+
+Algorithm~\ref{alg:online_cp} describes the online CP procedure.
+
+\begin{algorithm}[htbp]
+\caption{Online Adaptive Conformal Prediction}
+\label{alg:online_cp}
+\begin{algorithmic}[1]
+\REQUIRE Trained model $f$, initial calibration $(X_{\text{cal}}, y_{\text{cal}})$, test stream $(X_{\text{stream}}, y_{\text{stream}})$ with group keys $G$, significance level $\alpha$, optional window size $W$
+\ENSURE Prediction intervals $\{[\ell_j, u_j]\}$ for all test samples
+\FOR{each unique group key $g \in \text{sorted}(G)$}
+    \STATE $\mathcal{B} \leftarrow \{j : G_j = g\}$ \COMMENT{Batch indices for this group}
+    \STATE Compute nonconformity scores $\{R_i\}$ on current $(X_{\text{cal}}, y_{\text{cal}})$
+    \STATE $\hat{q}_g \leftarrow \text{Quantile}(\{R_i\}, \lceil(n+1)(1-\alpha)\rceil / n)$
+    \FOR{$j \in \mathcal{B}$}
+        \STATE $\hat{y}_j \leftarrow f(x_j)$
+        \STATE $\ell_j \leftarrow \hat{y}_j - \hat{q}_g$, \quad $u_j \leftarrow \hat{y}_j + \hat{q}_g$
+    \ENDFOR
+    \STATE $X_{\text{cal}} \leftarrow [X_{\text{cal}};\; X_\mathcal{B}]$ \COMMENT{Append batch features}
+    \STATE $y_{\text{cal}} \leftarrow [y_{\text{cal}};\; y_\mathcal{B}]$ \COMMENT{Append batch targets}
+    \IF{$W \neq \texttt{None}$ \AND $|y_{\text{cal}}| > W$}
+        \STATE $(X_{\text{cal}}, y_{\text{cal}}) \leftarrow \text{last } W \text{ samples}$ \COMMENT{Sliding window}
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Window Strategies.}
+Three calibration window strategies were investigated, each offering a different trade-off between recency and stability:
+
+\begin{enumerate}
+    \item \textbf{Expanding Window}: The calibration set grows monotonically as new observations are added. Starting from 2,740 samples (W4), it grows to approximately 12,016 samples by the end of the test period. This strategy maximizes data availability but may dilute recent distributional changes with older data.
+
+    \item \textbf{Sliding Window (7-day)}: A fixed-size window of approximately 2,737 samples ($\approx$7 days $\times$ 391 daily trips) is maintained. When new observations are added, the oldest ones are removed (FIFO). This strategy maximizes recency, tracking the most recent distributional regime, but has higher variance in quantile estimates due to the smaller calibration set.
+
+    \item \textbf{Sliding Window (14-day)}: A larger fixed-size window of approximately 5,474 samples ($\approx$14 days) balances recency and stability, capturing two-week patterns while still adapting to distribution changes.
+\end{enumerate}
+
+Table~\ref{tab:window_comparison} summarizes the key properties of each strategy.
+
+\begin{table}[htbp]
+\centering
+\caption{Comparison of online conformal prediction window strategies.}
+\label{tab:window_comparison}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Property} & \textbf{Expanding} & \textbf{Sliding-7d} & \textbf{Sliding-14d} \\
+\midrule
+Initial calibration size & 2,740 & 2,740 & 2,740 \\
+Final calibration size & $\sim$12,016 & $\sim$2,737 & $\sim$5,474 \\
+Recency emphasis & Low & High & Medium \\
+Quantile variance & Low & High & Medium \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Update Frequency: Daily vs.\ Hourly.}
+Two update frequencies were evaluated:
+
+\textbf{Daily updates} group test samples by calendar date. After all predictions for one day are made and the true travel times are observed, the calibration set is updated before the next day. This produces 25~recalibrations across the test period, with a maximum calibration lag of 24~hours.
+
+\textbf{Hourly updates} group test samples by (date, hour) pairs, producing 426~recalibrations across the test period. This reduces the maximum calibration lag to 1~hour, allowing the method to respond to within-day distribution shifts such as the transition from peak to off-peak traffic. Each hourly batch contains approximately 22~samples on average.
+
+The motivation for hourly updates is that bus travel times vary significantly throughout the day. By updating the calibration set after each hour, the nonconformity quantile can adapt to the specific traffic conditions of the current time period rather than using a day-level average.
+
+Figure~\ref{fig:online_vs_static} summarizes the key differences between static and online conformal prediction in terms of calibration set management.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/3_6.png}
+    \caption{Comparison of calibration set management strategies. \textbf{(a)}~Static CP uses a fixed calibration set (W4) for all test days — the quantile $\hat{q}$ never changes. \textbf{(b)}~Online expanding window grows the calibration set by appending each observed test day. \textbf{(c)}~Online sliding window (7-day) maintains a fixed-size window that moves forward, dropping old data to maximize recency.}
+    \label{fig:online_vs_static}
+\end{figure}
+
+% ------------------------------------------------------------
+\subsection{Segment-Level Uncertainty Decomposition}
+\label{subsec:segment_decomposition}
+% ------------------------------------------------------------
+
+While route-level conformal prediction provides an overall prediction interval for the total trip time, it does not reveal \emph{where} along the route the uncertainty originates. For transit operators, knowing that a trip might take between 70 and 95~minutes is useful, but knowing that most of the uncertainty comes from three specific segments near a congested intersection is \emph{actionable}. This section describes the segment-level uncertainty decomposition methodology developed to address RQ3.
+
+\subsubsection{Approach Overview}
+\label{subsubsec:decomposition_overview}
+
+The segment-level decomposition approach works in three steps:
+\begin{enumerate}
+    \item Generate prediction intervals at the \textbf{segment level} using a segment-level XGBoost model with conformal prediction.
+    \item \textbf{Aggregate} segment-level intervals to produce route-level prediction intervals.
+    \item \textbf{Attribute} route-level uncertainty to individual segments based on their interval widths.
+\end{enumerate}
+
+This bottom-up approach contrasts with the top-down route-level conformal prediction used in Experiments~1 and~2, and enables spatial analysis of uncertainty that is not possible with route-level methods alone.
+
+\subsubsection{Normalized Conformal Prediction at Segment Level}
+\label{subsubsec:normalized_cp}
+
+Standard split conformal prediction assigns the same interval width to all predictions, which is suboptimal when different segments have inherently different levels of predictability. \textbf{Normalized conformal prediction} addresses this by computing separate nonconformity quantiles for each segment, producing \textbf{adaptive interval widths}:
+
+\begin{itemize}
+    \item Segments that are harder to predict (higher historical variance, complex traffic patterns) receive \textbf{wider intervals}.
+    \item Segments that are easier to predict (stable conditions, open roads) receive \textbf{narrower intervals}.
+\end{itemize}
+
+For each segment $s$, the nonconformity quantile $\hat{q}_s$ is computed using only the calibration residuals from that segment:
+\begin{equation}
+    \hat{q}_s = \text{Quantile}\!\left(\{R_i : i \in \mathcal{C}_s\},\; \frac{\lceil(|\mathcal{C}_s|+1)(1-\alpha)\rceil}{|\mathcal{C}_s|}\right)
+    \label{eq:segment_quantile}
+\end{equation}
+where $\mathcal{C}_s$ is the set of calibration samples belonging to segment $s$, and $R_i = |y_i - \hat{y}_i|$ are the absolute residuals from the segment-level model.
+
+The prediction interval for a test sample in segment $s$ is then:
+\begin{equation}
+    C_s(x) = [\hat{y} - \hat{q}_s,\; \hat{y} + \hat{q}_s]
+    \label{eq:segment_interval}
+\end{equation}
+
+\subsubsection{Route-Level Aggregation}
+\label{subsubsec:route_aggregation}
+
+Since the total route travel time is the sum of segment travel times, segment-level intervals can be aggregated to the route level by summing the bounds. Two aggregation strategies were evaluated:
+
+\paragraph{Simple Summation.}
+For a trip with $N$ segments, the route-level bounds are computed by summing all segment bounds:
+\begin{equation}
+    \ell_{\text{route}} = \sum_{s=1}^{N} \ell_s, \qquad u_{\text{route}} = \sum_{s=1}^{N} u_s
+    \label{eq:sum_aggregation}
+\end{equation}
+
+This approach treats segment intervals as independent. Under this assumption, if each segment achieves at least $(1-\alpha)$ coverage individually, the probability that \emph{all} segments are simultaneously covered is at least $(1-\alpha)$, because the joint event is a subset of each individual event. In practice, this tends to produce \textbf{conservative (over-covering)} route-level intervals.
+
+\paragraph{Bonferroni Correction.}
+To provide a formal mathematical guarantee on route-level coverage, the Bonferroni correction adjusts each segment's confidence level upward:
+\begin{equation}
+    \alpha_s = \frac{\alpha}{N}
+    \label{eq:bonferroni}
+\end{equation}
+
+By the union bound, the probability that any segment is \emph{not} covered is at most:
+\begin{equation}
+    P\!\left(\bigcup_{s=1}^{N} \{y_s \notin C_s\}\right) \leq \sum_{s=1}^{N} P(y_s \notin C_s) \leq N \cdot \frac{\alpha}{N} = \alpha
+    \label{eq:bonferroni_guarantee}
+\end{equation}
+
+Therefore, the route-level coverage is guaranteed to be at least $1-\alpha$. However, with 35--44 segments per trip, the per-segment confidence becomes very high ($\approx$99.7\%), resulting in very wide segment-level intervals. This conservatism is the main drawback of the Bonferroni approach.
+
+\subsubsection{Uncertainty Attribution}
+\label{subsubsec:uncertainty_attribution}
+
+Given segment-level prediction intervals, the \textbf{uncertainty fraction} for each segment quantifies its contribution to route-level uncertainty:
+\begin{equation}
+    f_s = \frac{u_s - \ell_s}{\sum_{s'=1}^{N}(u_{s'} - \ell_{s'})}
+    \label{eq:uncertainty_fraction}
+\end{equation}
+
+where $f_s \in [0, 1]$ and $\sum_{s=1}^{N} f_s = 1$. Segments with large fractions are the primary drivers of route-level uncertainty. By aggregating these fractions across all test trips, we can identify \textbf{structural uncertainty hotspots}—segments that consistently contribute disproportionately to route-level uncertainty.
+
+Additionally, the \texttt{calibrated\_explanations} library provides \textbf{feature-level attribution} through its \texttt{explain\_factual()} method. For each test sample, this method generates a \texttt{FactualExplanation} object that contains per-feature contributions via its \texttt{get\_rules()} method. Each rule specifies a feature, its contribution weight (how much it shifts the prediction relative to a counterfactual), and the associated uncertainty interval. By comparing the feature contributions of high-uncertainty segments against low-uncertainty segments, we can identify \emph{why} specific segments are uncertain—for example, whether the uncertainty is driven by peak-hour effects, preceding segment congestion, or high historical variability. When per-sample feature weights are not available (due to model-library compatibility), global XGBoost feature importances are used as a proxy to characterize the feature profiles of high vs.\ low uncertainty segments.
+
+Figure~\ref{fig:segment_decomposition} provides an overview of the segment-level decomposition approach, showing how a single route-level interval is replaced by per-segment intervals with adaptive widths, and how these are aggregated and attributed.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/3_7.png}
+    \caption{Segment-level uncertainty decomposition. \textbf{Top}: A route-level prediction interval assigns a single constant width to the entire trip. \textbf{Middle}: The route is decomposed into individual segments, each receiving its own conformal prediction interval with an adaptive width $\hat{q}_s$ proportional to that segment's prediction difficulty. \textbf{Bottom-left}: Segment intervals are summed to produce route-level bounds. \textbf{Bottom-right}: The uncertainty fraction $f_s$ quantifies each segment's contribution to route-level uncertainty, identifying spatial hotspots.}
+    \label{fig:segment_decomposition}
+\end{figure}
+
+
+% ============================================================
+\section{Evaluation Metrics}
+\label{sec:evaluation_metrics}
+% ============================================================
+
+This section defines all metrics used to evaluate the proposed framework. The metrics are organized into four categories: point prediction accuracy, uncertainty calibration quality, coverage stability, and statistical significance tests.
+
+\subsection{Point Prediction Metrics}
+\label{subsec:point_metrics}
+
+Three standard regression metrics evaluate the accuracy of the XGBoost point predictions:
+
+\textbf{Mean Absolute Error (MAE)} measures the average magnitude of prediction errors:
+\begin{equation}
+    \text{MAE} = \frac{1}{n}\sum_{i=1}^{n} |y_i - \hat{y}_i|
+    \label{eq:mae}
+\end{equation}
+
+\textbf{Root Mean Squared Error (RMSE)} penalizes large errors more heavily:
+\begin{equation}
+    \text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n} (y_i - \hat{y}_i)^2}
+    \label{eq:rmse}
+\end{equation}
+
+\textbf{Mean Absolute Percentage Error (MAPE)} provides scale-independent error measurement:
+\begin{equation}
+    \text{MAPE} = \frac{100\%}{n}\sum_{i=1}^{n} \left|\frac{y_i - \hat{y}_i}{y_i}\right|
+    \label{eq:mape}
+\end{equation}
+
+\subsection{Uncertainty Calibration Metrics}
+\label{subsec:calibration_metrics}
+
+Four metrics evaluate the quality of prediction intervals:
+
+\textbf{Prediction Interval Coverage Probability (PICP)} measures the fraction of test samples where the true value falls within the predicted interval:
+\begin{equation}
+    \text{PICP} = \frac{1}{n}\sum_{i=1}^{n} \mathbf{1}\!\left[y_i \in [\ell_i, u_i]\right]
+    \label{eq:picp}
+\end{equation}
+The target PICP should be at least $1-\alpha$ (e.g., 0.90 for 90\% confidence). PICP values significantly below the target indicate miscalibration; values significantly above indicate conservative (unnecessarily wide) intervals.
+
+\textbf{Mean Prediction Interval Width (MPIW)} measures the average width of prediction intervals:
+\begin{equation}
+    \text{MPIW} = \frac{1}{n}\sum_{i=1}^{n} (u_i - \ell_i)
+    \label{eq:mpiw}
+\end{equation}
+Narrower intervals are preferred, provided that coverage is maintained. MPIW alone is not sufficient—a trivially wide interval covering $(-\infty, +\infty)$ would have perfect coverage but zero informational value.
+
+\textbf{Calibration Error} measures the absolute deviation between empirical and nominal coverage:
+\begin{equation}
+    \text{Cal.\ Error} = |\text{PICP} - (1-\alpha)|
+    \label{eq:cal_error}
+\end{equation}
+Lower values indicate better calibration. A calibration error of 0 means the prediction intervals are perfectly calibrated.
+
+\textbf{Winkler Score}~\cite{winkler1972scoring} provides a single metric that jointly penalizes wide intervals \emph{and} miscoverage:
+\begin{equation}
+    \text{WS}_i =
+    \begin{cases}
+        (u_i - \ell_i) + \frac{2}{\alpha}(\ell_i - y_i) & \text{if } y_i < \ell_i \\[4pt]
+        (u_i - \ell_i) & \text{if } \ell_i \leq y_i \leq u_i \\[4pt]
+        (u_i - \ell_i) + \frac{2}{\alpha}(y_i - u_i) & \text{if } y_i > u_i
+    \end{cases}
+    \label{eq:winkler}
+\end{equation}
+\begin{equation}
+    \text{Winkler Score} = \frac{1}{n}\sum_{i=1}^{n} \text{WS}_i
+    \label{eq:winkler_mean}
+\end{equation}
+
+The Winkler Score rewards narrow intervals that achieve the target coverage. When a true value falls outside the interval, a penalty proportional to the distance from the nearest bound is added (scaled by $2/\alpha$, making the penalty harsher at higher confidence levels). Lower Winkler Scores indicate better overall interval quality.
+
+\subsection{Coverage Stability Metrics}
+\label{subsec:stability_metrics}
+
+For online adaptive methods, it is important to assess not only the overall coverage but also how \emph{stable} the coverage is over time. Three stability metrics are computed from daily PICP values:
+
+\begin{itemize}
+    \item \textbf{Daily PICP standard deviation}: Measures the variability of coverage from day to day. Lower values indicate more consistent calibration.
+    \item \textbf{Maximum daily deviation}: $\max_d |PICP_d - (1-\alpha)|$, the worst single-day calibration error.
+    \item \textbf{Days below threshold}: Number of days where daily PICP falls below 85\%, indicating severe under-coverage.
+\end{itemize}
+
+\subsection{Statistical Significance Tests}
+\label{subsec:statistical_tests}
+
+To determine whether observed differences between methods are statistically significant (and not due to random variation), two tests are used:
+
+\textbf{Wilcoxon Signed-Rank Test}: A non-parametric test applied to paired daily PICP values from two methods. This test is appropriate because daily PICP values are paired (same days) and may not follow a normal distribution. A $p$-value below 0.05 indicates a statistically significant difference.
+
+\textbf{Holm-Bonferroni Correction}: When multiple pairwise comparisons are conducted (e.g., three online methods vs.\ static CP), the family-wise error rate is inflated. To control this, all raw $p$-values within each comparison family are adjusted using the Holm-Bonferroni method~\cite{holm1979simple}. This sequentially rejective procedure is less conservative than the classical Bonferroni correction while still controlling the family-wise error rate at $\alpha = 0.05$. Specifically, in Experiment~2, three comparisons are made (Expanding, Sliding-7d, Sliding-14d vs.\ Static CP), and in the hourly analysis, three additional comparisons are made (Hourly vs.\ Daily for each window type). The Holm-Bonferroni correction is applied separately within each family of comparisons.
+
+\textbf{Bootstrap Confidence Intervals}: 10,000 bootstrap resamples of the daily PICP differences are used to construct 95\% confidence intervals for the mean PICP improvement of one method over another. If the confidence interval excludes zero, the improvement is statistically significant.
