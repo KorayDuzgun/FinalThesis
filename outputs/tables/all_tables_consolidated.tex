@@ -371,6 +371,482 @@ Calibration vs. Test Far & Chi-squared (2x2) & chi2=732.73 & 2.2820e-161 & Signi
  & PICP & MPIW (s) & Cal. Error & Winkler \\
 Method &  &  &  &  \\
 \midrule
+Direct Route CP & 0.6091 & 1528.3115 & 0.2909 & 9544.5869 \\
+Aggregated Sum & 0.9921 & 4513.8095 & 0.0921 & 4577.4433 \\
+Bonferroni & 0.9998 & 10755.3995 & 0.0998 & 10759.9206 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T6_2_segment_uncertainty_statistics.tex ---
+\begin{table}
+\caption{Segment-Level Uncertainty Statistics (Top 20 by Width)}
+\label{tab:t62_segment_uncertainty}
+\begin{tabular}{rrrrrrrrr}
+\toprule
+Segment & Direction & Mean Width (s) & Std Width (s) & Median Width (s) & Frac. Route Unc. & Mean Actual (s) & N Samples & Rank \\
+\midrule
+1 & 1 & 1511.6764 & 855.5724 & 1501.0184 & 0.2781 & 874.8378 & 4747 & 1 \\
+17 & 2 & 190.2709 & 93.8376 & 166.5231 & 0.0482 & 250.2258 & 4397 & 2 \\
+18 & 1 & 150.2216 & 44.2608 & 141.0475 & 0.0300 & 161.8502 & 4780 & 3 \\
+17 & 1 & 132.1393 & 30.9450 & 126.8810 & 0.0264 & 114.7431 & 4390 & 4 \\
+19 & 1 & 129.1438 & 27.0474 & 125.2483 & 0.0258 & 78.3867 & 4626 & 5 \\
+21 & 2 & 127.8423 & 41.1013 & 116.7463 & 0.0335 & 162.7534 & 4307 & 6 \\
+15 & 2 & 127.0447 & 46.6813 & 114.7353 & 0.0327 & 121.0636 & 4244 & 7 \\
+16 & 2 & 121.8444 & 41.3814 & 109.7784 & 0.0313 & 100.1610 & 4074 & 8 \\
+14 & 1 & 121.5887 & 43.6469 & 111.0713 & 0.0243 & 155.6719 & 4642 & 9 \\
+16 & 1 & 119.9827 & 27.9794 & 114.4121 & 0.0240 & 74.9258 & 4512 & 10 \\
+20 & 1 & 119.7696 & 24.1194 & 116.8259 & 0.0239 & 104.0821 & 4546 & 11 \\
+26 & 2 & 116.0947 & 23.1523 & 112.4282 & 0.0306 & 137.4929 & 4378 & 12 \\
+18 & 2 & 115.3588 & 36.4240 & 104.6198 & 0.0297 & 86.6260 & 4267 & 13 \\
+15 & 1 & 113.0555 & 28.9870 & 107.0984 & 0.0228 & 70.9986 & 4432 & 14 \\
+27 & 2 & 112.6984 & 21.8302 & 110.1098 & 0.0296 & 92.5961 & 4355 & 15 \\
+19 & 2 & 112.5363 & 32.7086 & 103.4575 & 0.0292 & 84.2010 & 4195 & 16 \\
+25 & 2 & 111.2021 & 22.0295 & 107.2617 & 0.0292 & 115.3762 & 4168 & 17 \\
+29 & 2 & 110.5076 & 25.9711 & 107.2825 & 0.0288 & 136.3683 & 4426 & 18 \\
+14 & 2 & 110.0090 & 32.8378 & 104.6757 & 0.0283 & 104.2863 & 3992 & 19 \\
+21 & 1 & 108.8192 & 20.0767 & 107.4279 & 0.0217 & 80.2545 & 4593 & 20 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T6_3_aggregated_coverage_by_route.tex ---
+\begin{table}
+\caption{Aggregated Coverage by Route and Direction}
+\label{tab:t63_aggregated_coverage}
+\begin{tabular}{llrrrrr}
+\toprule
+Route & Direction & N Trips & Aggregated Sum PICP & Aggregated Sum MPIW & Bonferroni PICP & Bonferroni MPIW \\
+\midrule
+10 & 1 & 1542 & 0.9656 & 4538.0067 & 0.9987 & 10648.0301 \\
+10 & 2 & 1430 & 0.9979 & 3506.1296 & 1.0000 & 8362.0761 \\
+12 & 1 & 1416 & 0.9936 & 5341.6308 & 1.0000 & 12671.8915 \\
+12 & 2 & 1046 & 1.0000 & 3686.5067 & 1.0000 & 8887.6890 \\
+46 & 1 & 1856 & 0.9968 & 5470.6717 & 1.0000 & 13054.8673 \\
+46 & 2 & 1986 & 0.9990 & 4171.8645 & 1.0000 & 10030.3624 \\
+ALL & - & 9276 & 0.9921 & 4513.8095 & 0.9998 & 10755.3995 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T7_1_master_results.tex ---
+\begin{table}
+\caption{Master Results Table: All Methods Across All Experiments}
+\label{tab:master_results}
+\begin{tabular}{llccccl}
+\toprule
+Experiment & Method & Overall PICP & Overall MPIW & Cal. Error & Winkler & Key Finding \\
+\midrule
+Exp1 & Static CP & 0.6091 & 1528.3115 & 0.2909 & 9544.5869 & Coverage degrades with temporal distance from calibration (RQ1) \\
+Exp2 & Online Expanding & 0.7462 & 2163.8015 & 0.1538 & 7464.9670 & Growing calibration set stabilizes coverage under drift (RQ2) \\
+Exp2 & Online Sliding-7d & 0.6547 & 1626.3179 & 0.2453 & 8728.9015 & Sliding window adapts fastest to distribution shifts (RQ2) \\
+Exp2 & Online Sliding-14d & 0.7207 & 2018.0930 & 0.1793 & 7843.1981 & NaN \\
+Exp3 & Segment Aggregated & 0.9921 & 4513.8095 & 0.0921 & 4577.4433 & Aggregated segment intervals preserve route-level coverage (RQ3) \\
+Exp3 & Segment Bonferroni & 0.9998 & 10755.3995 & 0.0998 & 10759.9206 & Bonferroni correction ensures conservative coverage at route level (RQ3) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T7_2_contributions.tex ---
+\begin{table}
+\caption{Thesis Contributions Summary}
+\label{tab:contributions}
+\begin{tabular}{p{4.5cm}p{5.5cm}p{5.5cm}}
+\toprule
+Contribution & Evidence & Significance \\
+\midrule
+C1: Empirical characterization of conformal prediction under temporal distribution shift in bus transit & Exp1: Static CP coverage degrades from Near to Far test periods; KS tests confirm non-stationarity across weeks & First systematic study of conformal prediction calibration decay in bus transit domain; quantifies the temporal validity horizon \\
+C2: Comparative evaluation of online adaptive conformal methods for transit ETA & Exp2: Online Sliding-7d achieves most stable coverage across all periods; Online Expanding balances adaptivity with sample size & Demonstrates that simple online updates restore coverage guarantees without model retraining; practical for real-time deployment \\
+C3: Segment-level uncertainty decomposition with conformal guarantees & Exp3: Segment Aggregated method enables spatial uncertainty attribution while Bonferroni correction ensures conservative route-level coverage & Novel application of segment-level conformal prediction to transit; enables actionable interpretability for transit operators \\
+C4: Practical framework for uncertainty-aware bus ETA prediction & All experiments: Complete pipeline from data cleaning through conformal prediction with XGBoost, validated on 55 days of real-world Astana bus data & Reproducible methodology applicable to other cities and transit modes; bridges gap between ML uncertainty quantification and transit operations \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- all_tables_consolidated.tex ---
+% ===================================================================
+% Consolidated Tables for Thesis
+% Generated by Phase7_Results_Consolidation.ipynb
+% ===================================================================
+
+% --- T0_1_data_dimensions.tex ---
+\begin{table}
+\caption{Dataset Dimensions Summary}
+\label{tab:data_dimensions}
+\begin{tabular}{lrrll}
+\toprule
+Dataset & Records & Columns & Date Range & Description \\
+\midrule
+segment_level_data & 785976 & 15 & 2024-07-29 to 2024-09-21 & Actual bus segment traversal records \\
+GTFS trips & 19769 & 7 & 55 services & Scheduled trip metadata \\
+GTFS stop_times & 785976 & 5 & 19769 trips & Scheduled stop arrival/departures \\
+GTFS stops & 201 & 4 & Static & Stop locations with coordinates \\
+GTFS routes & 3 & 5 & Static & Route 10, 12, 46 definitions \\
+GTFS calendar_dates & 55 & 3 & 2024-07-29 to 2024-09-21 & Service calendar (55 active days) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T0_2_missing_anomalous_values.tex ---
+\begin{table}
+\caption{Missing and Anomalous Value Summary}
+\label{tab:missing_values}
+\begin{tabular}{llrlll}
+\toprule
+Column & Dtype & Null Count & Null % & Zero Count & Negative Count \\
+\midrule
+date & datetime64[us] & 0 & 0.00% & - & - \\
+deviceid & int32 & 0 & 0.00% & 0 & 0 \\
+direction & int8 & 0 & 0.00% & 0 & 0 \\
+segment & int16 & 0 & 0.00% & 0 & 0 \\
+start_point & str & 0 & 0.00% & - & - \\
+end_point & str & 0 & 0.00% & - & - \\
+start_time & datetime64[us] & 0 & 0.00% & - & - \\
+run_time_in_seconds & float64 & 0 & 0.00% & 925 & 0 \\
+dwell_time_in_seconds & float64 & 0 & 0.00% & 46436 & 0 \\
+arrival_time & datetime64[us] & 0 & 0.00% & - & - \\
+departure_time & datetime64[us] & 0 & 0.00% & - & - \\
+trip_id & int64 & 0 & 0.00% & 0 & 0 \\
+device_guid & str & 0 & 0.00% & - & - \\
+start_guid & str & 0 & 0.00% & - & - \\
+end_guid & str & 0 & 0.00% & - & - \\
+route_id & str & 0 & 0.00% & - & - \\
+route_short_name & int64 & 0 & 0.00% & 0 & 0 \\
+route_long_name & str & 0 & 0.00% & - & - \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T0_3_distribution_shift_tests.tex ---
+\begin{table}
+\caption{Distribution Shift Statistical Tests}
+\label{tab:dist_shift_tests}
+\begin{tabular}{lrll}
+\toprule
+Comparison & KS Statistic & p-value & Significant (p<0.05) \\
+\midrule
+W1 vs W2 & 0.025400 & 0.3915 & No \\
+W2 vs W3 & 0.028600 & 0.2252 & No \\
+W3 vs W4 & 0.052100 & 0.0012 & Yes \\
+W4 vs W5 & 0.031900 & 0.1209 & No \\
+W5 vs W6 & 0.036900 & 0.0899 & No \\
+W6 vs W7 & 0.034400 & 0.1368 & No \\
+W7 vs W8 & 0.049400 & 0.0063 & Yes \\
+Kruskal-Wallis (all weeks) & 31.301500 & 5.47e-05 & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T1_1_outlier_removal_summary.tex ---
+\begin{table}
+\caption{Outlier Removal Summary by Route and Direction (IQR method, threshold=1.5)}
+\label{tab:outlier_removal}
+\begin{tabular}{llrrrr}
+\toprule
+Route & Direction & Before & After & Removed & Removal % \\
+\midrule
+10 & 1 & 118181 & 115849 & 2332 & 1.970000 \\
+10 & 2 & 123961 & 120131 & 3830 & 3.090000 \\
+12 & 1 & 111191 & 106971 & 4220 & 3.800000 \\
+12 & 2 & 95517 & 90157 & 5360 & 5.610000 \\
+46 & 1 & 159308 & 150216 & 9092 & 5.710000 \\
+46 & 2 & 174561 & 166486 & 8075 & 4.630000 \\
+TOTAL & - & 782719 & 749810 & 32909 & 4.200000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T1_2_route_level_summary.tex ---
+\begin{table}
+\caption{Route-Level Dataset Summary Statistics}
+\label{tab:route_level_summary}
+\begin{tabular}{llrrrrrrr}
+\toprule
+Route & Dir & Trips & Mean (s) & Std (s) & Median (s) & Min (s) & Max (s) & Mean Segs \\
+\midrule
+10 & 1 & 3305 & 5972.700000 & 2082.800000 & 5138.000000 & 1219.000000 & 12748.000000 & 34.900000 \\
+10 & 2 & 3124 & 4273.200000 & 482.400000 & 4331.500000 & 1768.000000 & 5727.000000 & 38.400000 \\
+12 & 1 & 2896 & 5414.300000 & 2067.500000 & 4307.000000 & 1477.000000 & 12306.000000 & 36.800000 \\
+12 & 2 & 2213 & 3939.100000 & 411.200000 & 3960.000000 & 1974.000000 & 8151.000000 & 40.700000 \\
+46 & 1 & 3919 & 5637.300000 & 2010.900000 & 5004.000000 & 1428.000000 & 13028.000000 & 38.200000 \\
+46 & 2 & 4157 & 4585.500000 & 704.500000 & 4725.000000 & 1601.000000 & 6717.000000 & 39.900000 \\
+ALL & - & 19614 & 5029.100000 & 1686.300000 & 4496.000000 & 1219.000000 & 13028.000000 & 38.100000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T1_3_temporal_split_statistics.tex ---
+\begin{table}
+\caption{Temporal Split Strategy: Date Ranges, Record Counts, and Purpose}
+\label{tab:temporal_splits}
+\begin{tabular}{lllrlll}
+\toprule
+Split & Weeks & Date Range & Days & Segment Records & Trip Records & Purpose \\
+\midrule
+Train & W1, W2, W3 & Jul 29 - Aug 18 & 21 & 289,331 & 7,598 & XGBoost model training \\
+Calibration & W4 & Aug 19 - Aug 25 & 7 & 104,655 & 2,740 & Conformal calibration (nonconformity scores) \\
+Test Near & W5 & Aug 26 - Sep 01 & 7 & 103,700 & 2,707 & Test: minimal temporal drift \\
+Test Mid & W6 & Sep 02 - Sep 08 & 5 & 69,537 & 1,833 & Test: moderate temporal drift \\
+Test Far & W7, W8 & Sep 09 - Sep 21 & 13 & 180,575 & 4,736 & Test: maximum temporal drift \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T2_1_feature_summary.tex ---
+\begin{table}
+\caption{Feature set summary for route-level and segment-level models. Historical features use strict 7-day past-only lookback to prevent data leakage.}
+\label{tab:feature_summary}
+\begin{tabular}{llllp{5cm}l}
+\toprule
+Feature & Type & Level & Description & Source \\
+\midrule
+hour_of_day & Temporal & Both & Hour of day (0-23) & start_time \\
+minute_of_day & Temporal & Both & Minute of day (0-1439) & start_time \\
+day_of_week & Temporal & Both & Day of week (0=Mon, 6=Sun) & date \\
+is_weekend & Temporal & Both & Weekend indicator (0/1) & day_of_week \\
+hour_sin & Temporal & Both & Cyclical sin encoding of hour (period=24) & hour_of_day \\
+hour_cos & Temporal & Both & Cyclical cos encoding of hour (period=24) & hour_of_day \\
+dow_sin & Temporal & Both & Cyclical sin encoding of day (period=7) & day_of_week \\
+dow_cos & Temporal & Both & Cyclical cos encoding of day (period=7) & day_of_week \\
+route_id_encoded & Spatial & Both & Label-encoded route identifier & route_short_name \\
+direction_encoded & Spatial & Both & Binary direction indicator (0/1) & direction \\
+hist_route_mean & Historical & Route & Mean travel time from past 7 days & 7d lookback \\
+hist_route_std & Historical & Route & Std dev of travel time from past 7 days & 7d lookback \\
+hist_route_median & Historical & Route & Median travel time from past 7 days & 7d lookback \\
+hist_route_q25 & Historical & Route & 25th percentile from past 7 days & 7d lookback \\
+hist_route_q75 & Historical & Route & 75th percentile from past 7 days & 7d lookback \\
+hist_route_count & Historical & Route & Number of observations in past 7 days & 7d lookback \\
+hist_seg_mean & Historical & Segment & Mean run time from past 7 days for segment & 7d lookback \\
+hist_seg_std & Historical & Segment & Std dev of run time from past 7 days & 7d lookback \\
+hist_seg_median & Historical & Segment & Median run time from past 7 days & 7d lookback \\
+hist_seg_q25 & Historical & Segment & 25th percentile from past 7 days & 7d lookback \\
+hist_seg_q75 & Historical & Segment & 75th percentile from past 7 days & 7d lookback \\
+hist_seg_count & Historical & Segment & Number of observations in past 7 days & 7d lookback \\
+segment & Spatial & Segment & Segment number along route & raw data \\
+segment_number_normalized & Spatial & Segment & Segment position normalized to [0, 1] & segment / max_segment \\
+total_route_segments & Spatial & Segment & Total segments in this trip route & trip_id groupby \\
+cumulative_time_so_far & Trip Progress & Segment & Cumulative time of preceding segments (s) & running sum \\
+segments_completed & Trip Progress & Segment & Number of segments already traversed & cumcount \\
+fraction_route_completed & Trip Progress & Segment & Fraction of route completed (0-1) & segments_completed / total \\
+prev_seg_run_time & Lag & Segment & Run time of segment (n-1) & shift(1) \\
+prev_seg_dwell_time & Lag & Segment & Dwell time of segment (n-1) & shift(1) \\
+prev_2_seg_avg_run_time & Lag & Segment & Avg run time of segments (n-1), (n-2) & shift(1,2) \\
+prev_3_seg_avg_run_time & Lag & Segment & Avg run time of segments (n-1) to (n-3) & shift(1,2,3) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T3_1_top10_hyperparameters.tex ---
+\begin{table}
+\caption{Top 10 Route-Level XGBoost Hyperparameter Configurations (Temporal CV)}
+\label{tab:top10_hyperparams}
+\begin{tabular}{lrrrrrrrrrrr}
+\toprule
+ & n_estimators & max_depth & learning_rate & min_child_weight & subsample & colsample_bytree & reg_alpha & reg_lambda & CV_MAE & CV_MAE_std & Train_MAE \\
+Rank &  &  &  &  &  &  &  &  &  &  &  \\
+\midrule
+1 & 200 & 8 & 0.05 & 3 & 0.90 & 0.80 & 0.00 & 5 & 858.58 & 3.73 & 511.65 \\
+2 & 1000 & 6 & 0.01 & 3 & 0.80 & 0.90 & 0.00 & 1 & 861.39 & 2.76 & 560.33 \\
+3 & 200 & 6 & 0.05 & 10 & 0.80 & 0.80 & 0.10 & 5 & 861.92 & 2.16 & 630.55 \\
+4 & 500 & 6 & 0.01 & 10 & 0.80 & 0.90 & 0.10 & 1 & 864.13 & 4.91 & 662.93 \\
+5 & 200 & 6 & 0.05 & 5 & 0.80 & 0.90 & 0.10 & 1 & 864.29 & 0.37 & 582.32 \\
+6 & 500 & 6 & 0.01 & 3 & 0.90 & 0.90 & 0.00 & 5 & 864.99 & 0.37 & 651.41 \\
+7 & 200 & 6 & 0.05 & 10 & 0.80 & 0.90 & 0.00 & 5 & 865.10 & 3.03 & 626.41 \\
+8 & 500 & 6 & 0.01 & 5 & 0.90 & 0.90 & 0.00 & 5 & 865.52 & 0.90 & 656.57 \\
+9 & 200 & 4 & 0.05 & 3 & 0.80 & 0.80 & 0.00 & 5 & 869.88 & 5.45 & 700.81 \\
+10 & 500 & 6 & 0.05 & 10 & 0.80 & 0.80 & 0.00 & 5 & 870.55 & 3.19 & 561.09 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T3_2_route_xgboost_performance.tex ---
+\begin{table}
+\caption{Route-Level XGBoost Performance Across Temporal Periods}
+\label{tab:route_xgboost_performance}
+\begin{tabular}{lrrrr}
+\toprule
+ & MAE (s) & RMSE (s) & MAPE (%) & n_samples \\
+Period &  &  &  &  \\
+\midrule
+Train (W1-W3) & 553.20 & 834.34 & 11.28 & 7598 \\
+Calibration (W4) & 812.68 & 1144.90 & 15.74 & 2740 \\
+Test-Near (W5) & 800.38 & 1170.84 & 16.38 & 2707 \\
+Test-Mid (W6) & 821.03 & 1172.70 & 17.34 & 1833 \\
+Test-Far (W7-W8) & 844.14 & 1208.83 & 16.39 & 4736 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T3_3_segment_xgboost_performance.tex ---
+\begin{table}
+\caption{Segment-Level XGBoost Performance Across Temporal Periods}
+\label{tab:segment_xgboost_performance}
+\begin{tabular}{lrrrr}
+\toprule
+ & MAE (s) & RMSE (s) & MAPE (%) & n_samples \\
+Period &  &  &  &  \\
+\midrule
+Train (W1-W3) & 26.72 & 48.01 & 58.26 & 289331 \\
+Calibration (W4) & 33.73 & 98.31 & 70.69 & 104655 \\
+Test-Near (W5) & 33.69 & 103.08 & 71.84 & 103700 \\
+Test-Mid (W6) & 33.97 & 93.88 & 82.19 & 69537 \\
+Test-Far (W7-W8) & 35.23 & 104.49 & 90.14 & 180575 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T4_1_static_cp_90.tex ---
+\begin{table}
+\caption{Static Conformal Prediction Performance at 90\% Target Coverage (RQ1)}
+\label{tab:t4_1_static_cp_90}
+\begin{tabular}{llrrrrrr}
+\toprule
+Period & Weeks & Temporal Distance (days) & PICP & MPIW (s) & Cal. Error & Winkler & n \\
+\midrule
+Calibration & W4 & 0 & 0.9007 & 1528.3115 & 0.0007 & 2826.4903 & 2740 \\
+Test Near & W5 & 4 & 0.6169 & 1528.3115 & 0.2831 & 9738.9113 & 2707 \\
+Test Mid & W6 & 11 & 0.6028 & 1528.3115 & 0.2972 & 9767.2235 & 1833 \\
+Test Far & W7-W8 & 21 & 0.6071 & 1528.3115 & 0.2929 & 9347.3467 & 4736 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T4_2_multi_confidence.tex ---
+\begin{table}
+\caption{Static CP Coverage at Multiple Confidence Levels (RQ1)}
+\label{tab:t4_2_multi_confidence}
+\begin{tabular}{llrrrrr}
+\toprule
+Confidence & Period & PICP & MPIW (s) & Cal. Error & Winkler & n \\
+\midrule
+80% & Calibration & 0.8007 & 906.6145 & 0.0007 & 1983.7432 & 2740 \\
+80% & Test Near & 0.4348 & 906.6145 & 0.3652 & 6442.4806 & 2707 \\
+80% & Test Mid & 0.4119 & 906.6145 & 0.3881 & 6547.3315 & 1833 \\
+80% & Test Far & 0.4259 & 906.6145 & 0.3741 & 6283.6724 & 4736 \\
+90% & Calibration & 0.9007 & 1528.3115 & 0.0007 & 2826.4903 & 2740 \\
+90% & Test Near & 0.6169 & 1528.3115 & 0.2831 & 9738.9113 & 2707 \\
+90% & Test Mid & 0.6028 & 1528.3115 & 0.2972 & 9767.2235 & 1833 \\
+90% & Test Far & 0.6071 & 1528.3115 & 0.2929 & 9347.3467 & 4736 \\
+95% & Calibration & 0.9511 & 2457.9614 & 0.0011 & 3721.8183 & 2740 \\
+95% & Test Near & 0.7573 & 2457.9614 & 0.1927 & 13174.4679 & 2707 \\
+95% & Test Mid & 0.7387 & 2457.9614 & 0.2113 & 12912.0015 & 1833 \\
+95% & Test Far & 0.7690 & 2457.9614 & 0.1810 & 12477.7184 & 4736 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T4_3_conditional_coverage.tex ---
+\begin{table}
+\caption{Conditional Coverage of Static CP by Subgroup and Period (RQ1)}
+\label{tab:t4_3_conditional_coverage}
+\begin{tabular}{lllrrr}
+\toprule
+Period & Group & Subgroup & PICP & MPIW & n \\
+\midrule
+Test Near & time_period & early_morning & 0.7521 & 1528.3115 & 234 \\
+Test Near & time_period & evening & 0.5926 & 1528.3115 & 351 \\
+Test Near & time_period & evening_peak & 0.5697 & 1528.3115 & 409 \\
+Test Near & time_period & midday & 0.5596 & 1528.3115 & 1040 \\
+Test Near & time_period & morning_peak & 0.7136 & 1528.3115 & 653 \\
+Test Near & time_period & night & 0.2500 & 1528.3115 & 20 \\
+Test Near & is_weekend & Weekday & 0.6362 & 1528.3115 & 1993 \\
+Test Near & is_weekend & Weekend & 0.5630 & 1528.3115 & 714 \\
+Test Near & route & 10 & 0.6613 & 1528.3115 & 930 \\
+Test Near & route & 12 & 0.5850 & 1528.3115 & 682 \\
+Test Near & route & 46 & 0.5991 & 1528.3115 & 1095 \\
+Test Mid & time_period & early_morning & 0.7286 & 1528.3115 & 140 \\
+Test Mid & time_period & evening & 0.6260 & 1528.3115 & 262 \\
+Test Mid & time_period & evening_peak & 0.5534 & 1528.3115 & 309 \\
+Test Mid & time_period & midday & 0.5658 & 1528.3115 & 691 \\
+Test Mid & time_period & morning_peak & 0.6419 & 1528.3115 & 430 \\
+Test Mid & time_period & night & 1.0000 & 1528.3115 & 1 \\
+Test Mid & is_weekend & Weekday & 0.6125 & 1528.3115 & 1120 \\
+Test Mid & is_weekend & Weekend & 0.5877 & 1528.3115 & 713 \\
+Test Mid & route & 10 & 0.6761 & 1528.3115 & 639 \\
+Test Mid & route & 12 & 0.5639 & 1528.3115 & 454 \\
+Test Mid & route & 46 & 0.5635 & 1528.3115 & 740 \\
+Test Far & time_period & early_morning & 0.7413 & 1528.3115 & 375 \\
+Test Far & time_period & evening & 0.6582 & 1528.3115 & 629 \\
+Test Far & time_period & evening_peak & 0.6650 & 1528.3115 & 800 \\
+Test Far & time_period & midday & 0.5339 & 1528.3115 & 1875 \\
+Test Far & time_period & morning_peak & 0.6146 & 1528.3115 & 1056 \\
+Test Far & time_period & night & 1.0000 & 1528.3115 & 1 \\
+Test Far & is_weekend & Weekday & 0.6082 & 1528.3115 & 3951 \\
+Test Far & is_weekend & Weekend & 0.6013 & 1528.3115 & 785 \\
+Test Far & route & 10 & 0.6515 & 1528.3115 & 1403 \\
+Test Far & route & 12 & 0.6109 & 1528.3115 & 1326 \\
+Test Far & route & 46 & 0.5735 & 1528.3115 & 2007 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T4_4_significance.tex ---
+\begin{table}
+\caption{Statistical Significance Tests for Coverage Degradation (RQ1)}
+\label{tab:t4_4_significance}
+\begin{tabular}{lllll}
+\toprule
+Comparison & Test & Statistic & p-value & Conclusion \\
+\midrule
+Calibration vs. 0.90 & Binomial (two-sided) & 2468/2740 & 9.2391e-01 & Not significant \\
+Test Near vs. 0.90 & Binomial (two-sided) & 1670/2707 & 0.0000e+00 & Significant (p<0.05) \\
+Test Mid vs. 0.90 & Binomial (two-sided) & 1105/1833 & 4.2418e-246 & Significant (p<0.05) \\
+Test Far vs. 0.90 & Binomial (two-sided) & 2875/4736 & 0.0000e+00 & Significant (p<0.05) \\
+Test Near vs. Test Mid & Chi-squared (2x2) & chi2=0.85 & 3.5548e-01 & Not significant \\
+Test Near vs. Test Far & Chi-squared (2x2) & chi2=0.66 & 4.1501e-01 & Not significant \\
+Test Mid vs. Test Far & Chi-squared (2x2) & chi2=0.08 & 7.7530e-01 & Not significant \\
+Calibration vs. Test Far & Chi-squared (2x2) & chi2=732.73 & 2.2820e-161 & Significant (p<0.05) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+% --- T6_1_route_coverage_comparison.tex ---
+\begin{table}
+\caption{Route-Level Coverage Comparison (90\% target coverage)}
+\label{tab:t61_route_coverage}
+\begin{tabular}{lrrrr}
+\toprule
+ & PICP & MPIW (s) & Cal. Error & Winkler \\
+Method &  &  &  &  \\
+\midrule
 Direct Route CP & 0.6039 & 1501.3021 & 0.2961 & 9619.6859 \\
 Aggregated Sum & 0.9828 & 4132.0849 & 0.0828 & 4254.4537 \\
 Bonferroni & 1.0000 & 18122.2949 & 0.1000 & 18122.2949 \\
@@ -467,6 +943,46 @@ C1: Empirical characterization of conformal prediction under temporal distributi
 C2: Comparative evaluation of online adaptive conformal methods for transit ETA & Exp2: Online Sliding-7d achieves most stable coverage across all periods; Online Expanding balances adaptivity with sample size & Demonstrates that simple online updates restore coverage guarantees without model retraining; practical for real-time deployment \\
 C3: Segment-level uncertainty decomposition with conformal guarantees & Exp3: Segment Aggregated method enables spatial uncertainty attribution while Bonferroni correction ensures conservative route-level coverage & Novel application of segment-level conformal prediction to transit; enables actionable interpretability for transit operators \\
 C4: Practical framework for uncertainty-aware bus ETA prediction & All experiments: Complete pipeline from data cleaning through conformal prediction with XGBoost, validated on 55 days of real-world Astana bus data & Reproducible methodology applicable to other cities and transit modes; bridges gap between ML uncertainty quantification and transit operations \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+
+
+% --- figure_index.tex ---
+\begin{table}
+\caption{Complete Figure Index}
+\label{tab:figure_index}
+\begin{tabular}{lp{5cm}p{5.5cm}p{3.5cm}}
+\toprule
+Figure ID & Title & File Path & Thesis Section \\
+\midrule
+P0.1 & Daily Segment Record Counts & outputs/figures/phase0/P0_1_daily_record_counts.png & 3.1 Data Overview \\
+P0.2 & Daily Record Counts by Route & outputs/figures/phase0/P0_2_records_per_route.png & 3.1 Data Overview \\
+P0.3 & Segment Run Time Distribution & outputs/figures/phase0/P0_3_run_time_distribution.png & 3.1 Data Overview \\
+P0.4 & Dwell Time Distribution & outputs/figures/phase0/P0_4_dwell_time_distribution.png & 3.1 Data Overview \\
+P0.5 & Run Time by Segment Number & outputs/figures/phase0/P0_5_run_time_by_segment.png & 3.2 Spatial Heterogeneity \\
+P0.6 & Hourly Travel Time Heatmap & outputs/figures/phase0/P0_6_hourly_heatmap.png & 3.2 Temporal Patterns \\
+P0.7 & Weekly Travel Time Distributions & outputs/figures/phase0/P0_7_weekly_distribution.png & 3.3 Distribution Shift Evidence \\
+P0.8 & Trip Completeness Analysis & outputs/figures/phase0/P0_8_trip_completeness.png & 3.1 Data Quality \\
+P0.9 & Active Buses Per Day & outputs/figures/phase0/P0_9_active_buses.png & 3.1 Data Quality \\
+P0.10 & Bus Route Network Map & outputs/figures/phase0/P0_10_route_map.png & 3.1 Study Area \\
+P0.11 & Autocorrelation of Daily Mean Travel Times & outputs/figures/phase0/P0_11_autocorrelation.png & 3.3 Temporal Correlation \\
+P0.12 & Run Time Deviation Distribution & outputs/figures/phase0/P0_12_deviation_distribution.png & 3.2 Variability Analysis \\
+P4.1 & Static CP: Coverage Over Time & outputs/figures/phase4/P4_1_static_coverage_over_time.png & 5.1 Static CP Results \\
+P4.2 & Static CP: Interval Width Distribution & outputs/figures/phase4/P4_2_static_interval_widths.png & 5.1 Static CP Results \\
+P4.3 & Static CP: Coverage by Period & outputs/figures/phase4/P4_3_coverage_by_period.png & 5.1 Coverage Degradation \\
+P5.1 & Online CP: Coverage Comparison Over Time & outputs/figures/phase5/P5_1_online_coverage_comparison.png & 5.2 Online CP Results \\
+P5.2 & Online CP: Interval Width Comparison & outputs/figures/phase5/P5_2_online_width_comparison.png & 5.2 Online CP Results \\
+P5.3 & Online CP: Quantile Adaptation Trace & outputs/figures/phase5/P5_3_quantile_trace.png & 5.2 Adaptive Behavior \\
+P6.1 & Segment Uncertainty Heatmap & outputs/figures/phase6/P6_1_segment_uncertainty_heatmap.png & 5.3 Segment-Level Analysis \\
+P6.2 & Cumulative Uncertainty Waterfall & outputs/figures/phase6/P6_2_uncertainty_waterfall.png & 5.3 Uncertainty Attribution \\
+P6.3 & Route-Level vs Segment-Aggregated Coverage & outputs/figures/phase6/P6_3_route_vs_segment_coverage.png & 5.3 Route-Level Calibration \\
+P7.1 & Unified Coverage Comparison (Main Result) & outputs/figures/phase7/P7_1_unified_coverage_comparison.png & 6.1 Consolidated Results \\
+P7.2 & Coverage-Width Pareto Front & outputs/figures/phase7/P7_2_pareto_front.png & 6.1 Efficiency Trade-offs \\
+P7.3 & Multi-Metric Radar Chart & outputs/figures/phase7/P7_3_radar_chart.png & 6.1 Multi-Metric Summary \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -656,13 +656,25 @@ This section first introduces the theoretical foundations of conformal predictio
 \subsubsection{Theoretical Foundations}
 \label{subsubsec:cp_theory}
 
-\paragraph{Nonconformity Scores.}
-The central concept in conformal prediction is the \textbf{nonconformity score}, which measures how ``unusual'' a prediction is compared to the calibration data. For regression, a common choice is the absolute residual:
+\paragraph{Nonconformity Measure (NCM).}
+The central concept in conformal prediction is the \textbf{nonconformity measure} (NCM)—a function that quantifies how ``unusual'' a prediction is compared to observed outcomes. The NCM is the heart of conformal prediction: it determines both the \emph{validity} (coverage guarantee) and the \emph{efficiency} (interval width) of the resulting prediction intervals.
+
+The choice of NCM function directly affects interval efficiency. A simple NCM produces valid but potentially wide intervals, while a well-chosen NCM can achieve the same coverage guarantee with narrower intervals. Common NCM choices for regression include:
+
+\begin{itemize}
+    \item \textbf{Absolute residual}: $R_i = |y_i - \hat{y}_i|$ — produces constant-width intervals for all samples.
+    \item \textbf{Normalized residual}: $R_i = |y_i - \hat{y}_i| / \sigma_i$ — produces adaptive-width intervals, where $\sigma_i$ estimates the local difficulty of each sample. Harder-to-predict samples receive wider intervals; easier samples receive narrower intervals.
+    \item \textbf{Signed residual}: $r_i = y_i - \hat{y}_i$ — enables asymmetric intervals and conformal predictive distributions.
+\end{itemize}
+
+This thesis uses two NCM variants across its three experiments. Experiments~1 and~2 use the \textbf{absolute residual} NCM:
 \begin{equation}
     R_i = |y_i - \hat{y}_i|
     \label{eq:nonconformity}
 \end{equation}
-where $y_i$ is the true value and $\hat{y}_i$ is the model's point prediction for calibration sample $i$. Larger nonconformity scores indicate predictions that deviate more from the true values.
+where $y_i$ is the true value and $\hat{y}_i$ is the model's point prediction for calibration sample $i$. This choice is deliberate: Experiments~1 and~2 aim to isolate the effect of \emph{calibration set management} (static vs.\ online) on coverage. Using a fixed NCM function ensures that any observed differences in coverage are attributable to the calibration strategy, not to the NCM. If both the calibration strategy and the NCM were changed simultaneously, it would be unclear which factor drives the improvement.
+
+Experiment~3 uses the \textbf{normalized residual} NCM at the segment level ($R_i = |y_i - \hat{y}_i| / \sigma_s$, where $\sigma_s$ is the median absolute deviation of residuals for segment $s$), producing adaptive interval widths that reflect segment-specific prediction difficulty. This is described in Section~\ref{subsubsec:normalized_cp}.
 
 \paragraph{Coverage Guarantee.}
 Given a set of $n$ calibration samples with nonconformity scores $\{R_1, R_2, \ldots, R_n\}$, conformal prediction computes a quantile threshold:

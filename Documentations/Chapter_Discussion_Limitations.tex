@@ -1,0 +1,90 @@
+% ============================================================
+% DISCUSSION AND LIMITATIONS
+% (Draft — to be expanded after Results chapter is finalized)
+% ============================================================
+
+\chapter{Discussion}
+\label{ch:discussion}
+
+This chapter discusses the key findings of this thesis, their implications for the field of uncertainty-aware bus ETA prediction, and the limitations of the study.
+
+
+% ============================================================
+\section{Discussion of Findings}
+\label{sec:discussion_findings}
+% ============================================================
+
+\subsection{Static Conformal Prediction Fails Under Drift (RQ1)}
+
+The results of Experiment~1 demonstrate that static conformal prediction loses its coverage guarantee within one week of the calibration period. Coverage drops from 90.07\% on the calibration set to approximately 61\% on test data — a 29 percentage point loss. This finding has two important implications.
+
+First, the exchangeability assumption that underlies conformal prediction's theoretical guarantee is violated by temporal distribution shift in bus travel times. The gradual, intermittent nature of this drift (confirmed by the Kruskal-Wallis test, $p = 5.47 \times 10^{-5}$) means that the violation is not immediately obvious — coverage does not collapse to zero but rather stabilizes at a level far below the target. This makes miscalibration harder to detect in practice.
+
+Second, the constant interval width produced by static CP (MPIW = 1528.3~s for all samples, all periods) is a fundamental limitation. A 5-minute trip and a 2-hour trip receive the same interval width, which is operationally meaningless. This is a direct consequence of using a fixed absolute residual NCM ($R_i = |y_i - \hat{y}_i|$), which does not account for prediction difficulty.
+
+\subsection{Online Methods Recover Coverage (RQ2)}
+
+Experiment~2 shows that online conformal prediction methods significantly improve coverage compared to static CP. The Online Expanding method achieves 74.6\% overall coverage (vs.\ 60.9\% for static), and more importantly, maintains stable coverage across all test periods — unlike static CP which degrades from 76\% (Test-Near) to 46\% (Test-Far).
+
+A key design decision in this experiment was to keep the NCM function fixed (absolute residual) while varying only the calibration set management strategy. This controlled approach isolates the contribution of calibration freshness from other factors. The results confirm that calibration set management alone provides substantial coverage improvement, even without changing the NCM function.
+
+However, the results also reveal a gap: even the best online method (Expanding, PICP = 74.6\%) falls short of the 90\% target. This remaining gap is partly attributable to the fixed NCM — all samples still receive the same interval width within each calibration update cycle. Combining online calibration with an adaptive NCM (e.g., normalized residuals) could potentially close this gap, but this was not tested in order to maintain experimental isolation.
+
+The hourly update frequency provides a statistically significant improvement over daily updates (Wilcoxon $p < 0.01$ for all comparisons after Holm-Bonferroni correction), confirming that within-day distribution shifts are an important source of calibration staleness.
+
+\subsection{Segment Decomposition Enables Interpretability (RQ3)}
+
+Experiment~3 demonstrates that segment-level uncertainty decomposition can preserve route-level calibration while providing interpretable spatial attribution. The Aggregated Sum method achieves 99.2\% route-level coverage (exceeding the 90\% target) with a Winkler Score of 4,577 — the best across all methods.
+
+The top 5 segments account for 29.3\% (Direction~1) and 13.3\% (Direction~2) of total route-level uncertainty. This concentration is temporally stable — trend analysis of the top-5 segments shows no statistically significant changes over the test period (all $p > 0.05$), meaning that uncertainty hotspots are structural properties of the route rather than random noise.
+
+The use of a \texttt{DifficultyEstimator} from the \texttt{crepes} library (k-NN with $k=25$ on calibration residuals) enables adaptive interval widths per segment. The 13.1x variation in mean interval width across segments (from 67.58~s to 886.11~s) directly reflects the spatial heterogeneity in prediction difficulty.
+
+\subsection{The Two Dimensions of Conformal Prediction Quality}
+
+A cross-cutting finding of this thesis is that conformal prediction quality has two independent dimensions:
+
+\begin{enumerate}
+    \item \textbf{Coverage validity}: Achieved by keeping the calibration set fresh (online methods, Experiments 1--2). This is about \emph{when} the calibration data was collected.
+    \item \textbf{Interval efficiency}: Achieved by choosing an appropriate NCM function (normalized NCM, Experiment 3). This is about \emph{how} the nonconformity is measured.
+\end{enumerate}
+
+These two dimensions are orthogonal: online calibration improves coverage but not efficiency (intervals are still constant-width within each update), while normalized NCM improves efficiency but not coverage under drift (calibration set is still static). The combination of both — online calibration with normalized NCM — is a natural next step but was deliberately not tested in this thesis, in order to isolate the contribution of each component.
+
+This separation is both a strength and a limitation of the thesis design. It is a strength because it provides clear, interpretable evidence for each component's contribution. It is a limitation because the practical recommendation for deployment — combining both approaches — is not empirically validated.
+
+
+% ============================================================
+\section{Limitations}
+\label{sec:limitations}
+% ============================================================
+
+This study has several limitations that should be considered when interpreting the results.
+
+\subsection{Single City and Limited Observation Period}
+
+The dataset covers only three bus routes in Astana, Kazakhstan, over 55 days (July--September 2024). This limits the generalizability of the findings to other cities, transit networks, and seasons. Different cities may exhibit different drift patterns (e.g., faster drift in cities with more variable weather, slower drift in cities with stable infrastructure). Seasonal effects (winter vs.\ summer) are not captured in the 55-day observation window.
+
+\subsection{Single Model Architecture}
+
+Only XGBoost was used as the baseline point prediction model. While XGBoost provides a strong baseline, the relationship between model complexity and conformal prediction behavior is not explored. Deep learning models (LSTM, GRU, Transformer) might produce differently structured residuals, which could affect both the NCM distribution and the coverage degradation pattern under drift. The findings about coverage degradation under drift are likely model-independent (since they stem from distributional shift, not model architecture), but the quantitative results (e.g., the specific coverage values) may vary with different models.
+
+\subsection{Fixed NCM in Online Experiments}
+
+As discussed above, Experiments 1 and 2 use a fixed absolute residual NCM. This was a deliberate design choice to isolate the effect of calibration management, but it means that the online methods' coverage improvement represents a \emph{lower bound} on what is achievable. Combining online calibration with adaptive NCM (normalized or quantile-regression-based) would likely yield better coverage and narrower intervals, but this combination was not empirically tested.
+
+\subsection{No Model Retraining}
+
+The XGBoost model is trained once on W1--W3 and never retrained during the online CP experiments. Only the calibration set is updated. In a real-world deployment, periodic model retraining would likely improve point prediction accuracy and, consequently, conformal prediction quality. The decision not to retrain was intentional — it isolates the contribution of calibration management from model improvement — but it means the results reflect a worst-case scenario for model freshness.
+
+\subsection{No External Variables}
+
+The dataset does not include weather data, special events, or real-time traffic information. These factors can cause abrupt distribution shifts (e.g., a rainstorm or a football match) that are distinct from the gradual seasonal drift observed in this study. The framework's performance under sudden, event-driven drift is not evaluated.
+
+\subsection{Data Quality Anomalies}
+
+Two days (September 3--4, 2024) were excluded due to data collection failures. While the exclusion is justified, it reduces the effective observation period and may mask the framework's behavior during actual data quality incidents.
+
+\subsection{Segment-Level Feature Attribution Limitations}
+
+The feature-level attribution via \texttt{calibrated\_explanations}' \texttt{explain\_factual()} method encountered a library compatibility issue where per-sample \texttt{feature\_weights} were not directly accessible in the expected format. A fallback to the \texttt{get\_rules()} API and global XGBoost feature importances was used. While this provides meaningful high-level attribution, it lacks the per-sample granularity that the library is designed to provide. Future work should investigate the library's evolving API or alternative explanation methods (e.g., SHAP values for conformal prediction intervals).

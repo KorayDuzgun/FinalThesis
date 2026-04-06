@@ -1,0 +1,114 @@
+% ============================================================
+% FUTURE WORK
+% (Draft — to be expanded after Discussion is finalized)
+% ============================================================
+
+\chapter{Future Work}
+\label{ch:future_work}
+
+This chapter outlines promising research directions that build on the findings and address the limitations of this thesis.
+
+
+% ============================================================
+\section{Combining Online Calibration with Adaptive NCM}
+\label{sec:fw_combined}
+% ============================================================
+
+The most direct extension of this work is combining the two independent improvements demonstrated in this thesis: online calibration management (Experiment~2) and adaptive NCM via normalized residuals (Experiment~3). This thesis deliberately kept these components separate to isolate their individual contributions, but a practical deployment would benefit from both simultaneously.
+
+Specifically, an online conformal prediction system with a normalized NCM ($R_i = |y_i - \hat{y}_i| / \sigma_i$) where both the calibration set and the difficulty estimates ($\sigma_i$) are updated over time would:
+\begin{itemize}
+    \item Maintain coverage validity through fresh calibration data (as shown in Experiment~2),
+    \item Improve interval efficiency through sample-specific widths (as shown in Experiment~3), and
+    \item Potentially close the remaining gap between the best online method (PICP = 74.6\%) and the 90\% target.
+\end{itemize}
+
+The key research question is whether the combined approach yields improvements that are \emph{greater than} the sum of the individual components, or whether there are diminishing returns.
+
+
+% ============================================================
+\section{Alternative NCM Functions}
+\label{sec:fw_ncm}
+% ============================================================
+
+This thesis explored only two NCM functions (absolute and normalized residuals). Several alternative NCM designs could improve interval efficiency:
+
+\begin{itemize}
+    \item \textbf{Quantile regression-based NCM}: Train the model to directly predict conditional quantiles rather than the mean, then use the quantile range as the NCM. This naturally produces asymmetric intervals that reflect the right-skewed nature of bus travel time distributions.
+
+    \item \textbf{Conformal quantile regression (CQR)}: A hybrid approach where a quantile regression model is conformalized, combining the flexibility of quantile regression with the coverage guarantee of conformal prediction.
+
+    \item \textbf{Locally-weighted NCM}: Use a $k$-nearest-neighbors approach to estimate local residual variability, producing NCM values that adapt to the feature space rather than only to the segment identity.
+
+    \item \textbf{Time-dependent NCM}: Design an NCM that explicitly incorporates the temporal distance from the calibration period, down-weighting older calibration samples.
+\end{itemize}
+
+Each of these alternatives trades simplicity for potential efficiency gains, and the optimal choice likely depends on the specific transit network and data characteristics.
+
+
+% ============================================================
+\section{Deep Learning Baselines}
+\label{sec:fw_deep_learning}
+% ============================================================
+
+This thesis uses XGBoost as the sole baseline model. Extending the framework to deep learning architectures (LSTM, GRU, Transformer, Graph Neural Networks) would provide two benefits:
+
+\begin{enumerate}
+    \item \textbf{Improved point prediction}: Sequential models may capture temporal dependencies that tree-based models miss, potentially reducing residuals and thereby narrowing conformal intervals.
+    \item \textbf{Different residual structure}: Deep learning models may produce differently distributed residuals (e.g., more or less heteroscedastic), which would test whether the findings about coverage degradation under drift are model-independent or model-specific.
+\end{enumerate}
+
+A particularly relevant comparison would be to test whether the conformal prediction layer ``equalizes'' different base models — that is, whether a weak model with good calibration can achieve similar practical performance to a strong model with poor calibration.
+
+
+% ============================================================
+\section{Multi-City Generalization}
+\label{sec:fw_multi_city}
+% ============================================================
+
+The current study is limited to three routes in Astana, Kazakhstan. Extending the framework to multiple cities with different characteristics (e.g., European cities with tram networks, Asian megacities with high congestion variability, developing-world cities with less predictable infrastructure) would test the generalizability of the findings. In particular:
+
+\begin{itemize}
+    \item Do different cities exhibit different drift speeds? If so, does the optimal sliding window size change?
+    \item Are the same segments consistently uncertain across different seasons and cities?
+    \item Can transfer learning be used to bootstrap calibration in a new city using data from a similar city?
+\end{itemize}
+
+
+% ============================================================
+\section{Real-Time Deployment Architecture}
+\label{sec:fw_deployment}
+% ============================================================
+
+This thesis evaluates all methods in an offline, batch-processing setting. A real-time deployment would introduce additional considerations:
+
+\begin{itemize}
+    \item \textbf{Latency constraints}: The hourly CP updates require re-creation of the \texttt{WrapCalibratedExplainer} object, which takes approximately 15--20~ms per prediction. For a fleet of hundreds of buses with per-stop predictions, this may require optimization.
+    \item \textbf{Streaming calibration}: Rather than batch updates (daily or hourly), a truly streaming approach could update the calibration set after each individual observation, maintaining a sliding window in real-time.
+    \item \textbf{Anomaly detection}: In production, the system should detect and flag anomalous observations (e.g., GPS errors, route detours) before they contaminate the calibration set.
+    \item \textbf{Model retraining triggers}: The framework could be extended with automatic triggers for model retraining when the prediction error exceeds a threshold, combining model adaptation with calibration adaptation.
+\end{itemize}
+
+
+% ============================================================
+\section{External Variable Integration}
+\label{sec:fw_external}
+% ============================================================
+
+Weather conditions, special events, school schedules, and real-time traffic data are known to affect bus travel times but were not available in the dataset used in this thesis. Integrating these variables could:
+
+\begin{itemize}
+    \item Reduce the residual variability captured by the NCM (by explaining some of the variance through features rather than treating it as noise),
+    \item Enable event-aware calibration strategies (e.g., using separate calibration sets for rainy vs.\ dry days),
+    \item Provide a more realistic test of how the framework handles sudden, event-driven distribution shifts as opposed to the gradual seasonal drift observed in the current dataset.
+\end{itemize}
+
+
+% ============================================================
+\section{Online Segment-Level Decomposition}
+\label{sec:fw_online_segment}
+% ============================================================
+
+Experiment~3 demonstrated segment-level decomposition with a static calibration set. Combining this with online calibration (Experiment~2) at the segment level would create a fully adaptive, spatially interpretable uncertainty framework. The per-segment difficulty estimates ($\sigma_s$) could also be updated over time, allowing the system to detect when a previously stable segment becomes a new uncertainty hotspot (e.g., due to road construction or a new traffic signal).
+
+This is arguably the most impactful future direction, as it would deliver a complete, deployment-ready system that maintains valid coverage, provides efficient intervals, and explains where uncertainty originates — all while adapting to changing conditions in real time.
