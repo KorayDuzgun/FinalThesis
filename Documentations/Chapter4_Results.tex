@@ -1,0 +1,193 @@
+% ============================================================
+% CHAPTER 4 — RESULTS
+% Uncertainty-Aware Bus ETA Prediction Under Drift
+% with Segment-Level Risk Decomposition
+% ============================================================
+
+\chapter{Results}
+\label{ch:results}
+
+This chapter presents the empirical results of the thesis. It is organized around the four analytical stages of the implementation pipeline described in Chapter~\ref{ch:methodology}. Section~\ref{sec:baseline_results} reports the performance of the baseline XGBoost models and establishes three quantitative properties of the data and the predictor that directly motivate the subsequent conformal prediction experiments: temporal drift in point-prediction accuracy, heteroscedastic and heavy-tailed residuals, and spatial heterogeneity in segment-level error. Sections~\ref{sec:exp1_results}--\ref{sec:exp3_results} report the results of Experiments~1--3, corresponding to Research Questions~1--3.
+
+% ============================================================
+\section{Baseline Model Results}
+\label{sec:baseline_results}
+% ============================================================
+
+Every conformal prediction experiment that follows in Sections~\ref{sec:exp1_results}--\ref{sec:exp3_results} wraps the same pair of XGBoost baseline models: one at the route level, one at the segment level. Whether the conclusions drawn from those experiments are interpretable depends on three properties of the baseline itself, which this section establishes in turn.
+
+\textbf{First}, how the baseline's point-prediction accuracy behaves as test data drifts temporally away from the calibration window (Section~\ref{subsec:route_level_performance}). This is the point-prediction-level counterpart to the coverage degradation that Experiment~1 will analyze in Section~\ref{sec:exp1_results}: the same temporal distance that erodes coverage also erodes accuracy, and documenting this up front decouples the two effects in the interpretation that follows.
+
+\textbf{Second}, the structure of the baseline's residuals (Section~\ref{subsec:residual_structure}). Whether they are homoscedastic, whether they are Gaussian, and whether they are serially independent directly constrains which uncertainty quantification methods can be built on top of the baseline. A megaphone-shaped residual cloud rules out fixed-width intervals; heavy Q-Q tails rule out Gaussian assumptions. Both are load-bearing justifications for the distribution-free and normalized conformal prediction choices made in Chapter~\ref{ch:methodology}.
+
+\textbf{Third}, the spatial distribution of segment-level prediction difficulty (Section~\ref{subsec:segment_level_performance}). If all segments were equally hard to predict, there would be no operational reason to decompose route-level uncertainty into per-segment contributions; segment-level attribution would reduce to an arithmetic redistribution of a single global number. The fact that segment difficulty is non-uniform is what makes Experiment~3 a meaningful research question rather than a formal exercise.
+
+The three subsections that follow are therefore not a preamble to the conformal prediction experiments but their empirical foundation. Their purpose is to make every subsequent claim in this chapter auditable back to a property of the underlying baseline, rather than to a choice hidden inside the conformal layer.
+
+% ------------------------------------------------------------
+\subsection{Hyperparameter Search Outcome and Generalization Gap}
+\label{subsec:baseline_hyperparam_outcome}
+% ------------------------------------------------------------
+
+The randomized search described in Section~\ref{subsubsec:hyperparameter_tuning} evaluated 50 configurations with forward-chaining temporal cross-validation. The best route-level configuration (reported in Table~\ref{tab:best_hyperparams}) achieved a CV MAE approximately 347~seconds above its training MAE. This generalization gap is about 7\% of the mean route-level travel time ($\approx$5,029~s), which is modest in absolute terms but indicates that the tree-based model captures a non-trivial amount of training-specific structure.
+
+Stronger regularization (larger \texttt{reg\_lambda}, smaller \texttt{max\_depth}, smaller \texttt{n\_estimators}) was evaluated inside the search space but systematically degraded the CV MAE. The selected configuration therefore represents the empirical sweet spot for this dataset rather than the globally strictest regularization. This trade-off is acceptable for the present work because the thesis prioritizes a stable point-prediction base for conformal calibration rather than the lowest possible point-prediction error.
+
+% ------------------------------------------------------------
+\subsection{Route-Level Model Performance}
+\label{subsec:route_level_performance}
+% ------------------------------------------------------------
+
+Table~\ref{tab:route_level_performance} reports the route-level XGBoost performance on the five temporal periods. All metrics are computed directly from the trained model on held-out data and correspond to the values produced by the Phase~3 implementation notebook.
+
+\begin{table}[htbp]
+\centering
+\caption{Route-level XGBoost performance across temporal periods (W1--W3 training, W4 calibration, W5--W8 test). Target: \texttt{total\_travel\_time\_seconds}.}
+\label{tab:route_level_performance}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Period} & \textbf{MAE (s)} & \textbf{RMSE (s)} & \textbf{MAPE (\%)} & \textbf{Samples} \\
+\midrule
+Train (W1--W3) & 553.20 & 834.34 & 11.28 & 7,598 \\
+Calibration (W4) & 812.68 & 1,144.90 & 15.74 & 2,740 \\
+Test-Near (W5) & 800.38 & 1,170.84 & 16.38 & 2,707 \\
+Test-Mid (W6) & 821.03 & 1,172.70 & 17.34 & 1,833 \\
+Test-Far (W7--W8) & 844.14 & 1,208.83 & 16.39 & 4,736 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three observations are worth highlighting.
+
+\textbf{Temporal drift in point-prediction accuracy.} MAE rises from 800.38~s in Test-Near (W5) to 844.14~s in Test-Far (W7--W8), an increase of 5.47\%. This monotone degradation with growing temporal distance from the calibration period is the point-prediction-level signature of the distribution shift established statistically in Section~\ref{subsubsec:dataset_characteristics}. It confirms that even before any conformal layer is attached, the underlying predictor loses accuracy over time. The magnitude of this accuracy drift (about five percent over three weeks) is modest compared to the coverage degradation that will be reported in Section~\ref{sec:exp1_results}, where static PICP collapses from the target of 90\% to roughly 60\% on the same test span. This gap between accuracy drift and coverage drift is itself informative: it shows that most of the coverage loss is driven by the conformal calibration layer becoming stale, not by the point predictor collapsing.
+
+\textbf{Test-Near is distributionally close to the calibration week.} A secondary observation is that Test-Near MAE (800.38~s) is slightly \emph{lower} than Calibration MAE (812.68~s). This is consistent with W5 (Aug 26--Sep 1) being distributionally very similar to W4 (Aug 19--25)---they are adjacent weeks with no holidays or structural changes in operation. The accuracy drift becomes visible only from W6 onward and grows through W7--W8. This pattern will later be mirrored in the coverage results of Experiment~1, where Test-Near PICP is also the least degraded of the three test periods.
+
+\textbf{RMSE-to-MAE ratio.} Across the test periods, RMSE is roughly 1.4--1.5 times larger than MAE. The gap between these two metrics is driven by outlier errors---a small number of trips for which the prediction is badly wrong. This is the first quantitative sign of heavy-tailed residuals, which is analysed in detail in Section~\ref{subsec:residual_structure}.
+
+Figure~\ref{fig:daily_mae_trend} refines the period-level view of Table~\ref{tab:route_level_performance} into a daily one.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/P3_5_daily_mae.png}
+    \caption{Daily route-level MAE across the calibration and test periods. Green: Calibration (W4), orange: Test-Near (W5), red: Test-Mid (W6), purple: Test-Far (W7--W8). The dashed line is a linear regression fit over the test days only (slope $= +1.94$~s/day, $R^2 = 0.04$), indicating a slow but consistent upward drift in point-prediction error as temporal distance from calibration grows.}
+    \label{fig:daily_mae_trend}
+\end{figure}
+
+A linear regression over the test-period days yields a slope of \textbf{+1.94~seconds per day} ($R^2 = 0.04$). Two points about this number are important. First, the low $R^2$ reflects the substantial day-to-day variability of daily MAE, which is driven by weather, traffic shocks, and differences in daily sample size; the slope describes the \emph{average} trend rather than a deterministic daily increment. Second, the slope is positive and small---on the order of two seconds per day---which is the baseline-level counterpart to the coverage degradation reported in Experiment~1. It provides a concrete benchmark that any adaptive conformal method studied in Experiment~2 must be able to absorb.
+
+% ------------------------------------------------------------
+\subsection{Residual Structure}
+\label{subsec:residual_structure}
+% ------------------------------------------------------------
+
+Figure~\ref{fig:residual_analysis} presents a four-panel residual diagnostic for the route-level model. All panels are computed over the combined calibration and test periods.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/P3_2_residual_analysis.png}
+    \caption{Route-level residual diagnostics. \emph{Top-left}: Residuals vs Predicted exhibits a megaphone shape, evidencing heteroscedasticity. \emph{Top-right}: Residual distribution is sharply peaked at zero with mild right skew. \emph{Bottom-left}: Q-Q plot reveals heavy tails, especially on the positive side. \emph{Bottom-right}: Residuals over sample index show zero-centred noise with occasional large bursts, suggesting residual serial structure linked to congestion episodes.}
+    \label{fig:residual_analysis}
+\end{figure}
+
+\textbf{Top-left --- Residuals vs Predicted.} The panel shows a clear megaphone pattern. At predicted values of 3,000--5,000~s the residuals are tightly clustered within roughly $\pm 2,000$~s, while at predicted values of 8,000--10,000~s the residual band widens to roughly $-4,000$ to $+6,500$~s. The spread of residuals therefore grows with the predicted value, which is the defining property of heteroscedastic errors. This matters for conformal prediction because a single global quantile of absolute residuals---the quantity that split conformal prediction uses---will be simultaneously too loose for easy trips (short predicted times) and too tight for hard trips (long predicted times). This observation is the empirical trigger for the \emph{normalized} conformal prediction variant used in Experiment~3, which allows interval width to depend on an auxiliary per-sample difficulty estimate.
+
+\textbf{Top-right --- Residual Distribution.} The residual histogram has a sharp peak at zero and a mild right skew. Almost all trips have small errors, but a non-trivial tail extends to positive residuals of several thousand seconds. This matches the right-skewed travel-time distribution reported in Section~\ref{subsubsec:dataset_characteristics}: the model under-predicts more often than it over-predicts on long trips.
+
+\textbf{Bottom-left --- Q-Q Plot.} The quantile-quantile plot against the standard normal distribution shows a pronounced S-shape: both tails of the empirical residual distribution fall outside the normal reference line, with the upper tail reaching values near $+6,500$~s---well beyond what a Gaussian model would predict. This rules out parametric uncertainty methods that assume normally distributed errors (for example, confidence intervals of the form $\hat{y} \pm 1.96 \hat{\sigma}$) and supports the choice of a distribution-free approach such as conformal prediction.
+
+\textbf{Bottom-right --- Residuals Over Time.} Residuals plotted against sample index are centred near zero on average but contain periodic clusters of large positive errors. These bursts are not uniformly distributed; they concentrate around specific sample indices, consistent with congestion episodes or peak-hour operation during certain days. The residual series is therefore not i.i.d., which is another reason to prefer methods whose validity does not depend on i.i.d.\ or Gaussian assumptions.
+
+Together, the four panels establish three properties of the baseline residuals that constrain the uncertainty-quantification layer: (i)~the spread of errors grows with the predicted value (heteroscedasticity), (ii)~the error distribution has heavy tails and cannot be approximated by a normal distribution, and (iii)~residuals show temporal clustering rather than being independent. These three properties jointly justify the conformal prediction framework used in the rest of the thesis, and in particular the normalized, per-segment variant developed for Experiment~3.
+
+A finer breakdown of errors by hour of day shows that peak-hour MAE is approximately 1.3 times higher than off-peak MAE, which is the temporal counterpart of the spatial heterogeneity analysed in the next subsection.
+
+% ------------------------------------------------------------
+\subsection{Segment-Level Model Performance and Spatial Heterogeneity}
+\label{subsec:segment_level_performance}
+% ------------------------------------------------------------
+
+Table~\ref{tab:segment_level_performance} reports the segment-level XGBoost performance on the same temporal periods.
+
+\begin{table}[htbp]
+\centering
+\caption{Segment-level XGBoost performance across temporal periods. Target: \texttt{run\_time\_in\_seconds}.}
+\label{tab:segment_level_performance}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Period} & \textbf{MAE (s)} & \textbf{RMSE (s)} & \textbf{MAPE (\%)} & \textbf{Samples} \\
+\midrule
+Train (W1--W3) & 26.72 & 48.01 & 58.26 & 289,331 \\
+Calibration (W4) & 33.73 & 98.31 & 70.69 & 104,655 \\
+Test-Near (W5) & 33.69 & 103.08 & 71.84 & 103,700 \\
+Test-Mid (W6) & 33.97 & 93.88 & 82.19 & 69,537 \\
+Test-Far (W7--W8) & 35.23 & 104.49 & 90.14 & 180,575 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Segment-level MAE rises from 33.69~s in Test-Near to 35.23~s in Test-Far, a 4.57\% increase---slightly smaller than the 5.47\% drift observed at the route level, but in the same direction. The MAPE values look extreme (70--90\%) because many segments have very small mean run times (tens of seconds), so even a small absolute error translates into a large percentage error; this is why MAE, not MAPE, is used as the primary metric for the segment model. The RMSE-to-MAE ratio is roughly 3$\times$, noticeably higher than at the route level, which confirms that a small number of very hard segments dominate the error structure.
+
+Figure~\ref{fig:segment_mae_position} breaks the segment-level MAE down by segment position along the route.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures/P3_6_segment_mae_by_position.png}
+    \caption{Segment-level MAE by segment position. One extreme outlier (segment~1, MAE $\approx 334$~s) dominates the error budget; excluding this outlier, MAE ranges from 10.67~s to 334.33~s across the remaining segments with a coefficient of variation of 1.41. The dashed horizontal line shows the overall mean MAE (34.3~s). The red bars highlight the five hardest segments, which correspond to specific geographic hotspots and motivate the per-segment uncertainty decomposition of Experiment~3.}
+    \label{fig:segment_mae_position}
+\end{figure}
+
+Two features of the plot stand out.
+
+\textbf{A dramatic outlier at segment~1.} Segment~1 has MAE $\approx 334$~s, while every other segment has MAE below $\approx 70$~s. This is consistent with segment~1 often corresponding to the first traversal of a trip, where the bus is still entering the GPS-tracked portion of the route and the timing noise is highest. The outlier is structural, not random---it is visible on every route and every direction---and the normalized conformal prediction used in Experiment~3 will assign this segment a correspondingly wider interval.
+
+\textbf{Heterogeneous difficulty across the remaining segments.} Excluding the outlier, MAE ranges from roughly 10.67~s to 334.33~s across the segments, with an overall mean of 34.3~s (dashed line in the figure) and a coefficient of variation of 1.41. The red bars mark the five hardest segments; their positions cluster at specific points along each route where local traffic conditions---congested intersections, commercial zones, signalized crossings---introduce sustained variability.
+
+This spatial heterogeneity is the empirical premise of Research Question~3. If all segments had roughly the same difficulty, there would be no practical benefit in decomposing a route-level prediction interval into per-segment contributions: the information gained would be uniform and therefore redundant. The fact that a small subset of segments is responsible for a disproportionate share of segment-level error means that per-segment uncertainty decomposition can actually identify \emph{where} the risk is concentrated, which in turn is operationally useful for transit operators (e.g., to target signal priority or schedule adjustments at specific hotspots).
+
+% ------------------------------------------------------------
+\subsection{Feature Importance}
+\label{subsec:feature_importance_results}
+% ------------------------------------------------------------
+
+Inspection of the trained route-level XGBoost feature importances confirmed that \textbf{historical route statistics}---especially \texttt{hist\_route\_mean}, \texttt{hist\_route\_median}, and \texttt{hist\_route\_std}---are the most influential inputs. This is consistent with the intuition that the most informative predictor of a trip's travel time is the recent past behaviour of the same route, direction, and time period. Temporal features (\texttt{hour\_of\_day}, the cyclical encodings \texttt{hour\_sin}/\texttt{hour\_cos}, and \texttt{is\_weekend}) contribute at a secondary level by capturing systematic daily and weekly traffic cycles. Route and direction identifiers also contribute, reflecting the structural differences between the three routes documented in Table~\ref{tab:route_level_stats}.
+
+For the segment-level model, the lag features (\texttt{prev\_seg\_run\_time} and its averaged variants) become important: they propagate congestion information forward from already-traversed segments to the current one. The importance of lag features at the segment level but not at the route level is consistent with the segment model being an \emph{within-trip} predictor, whereas the route model makes a single end-to-end prediction at trip start.
+
+Taken together, the feature-importance profile is consistent with the hypothesis that bus ETA is a mixture of (i)~slowly evolving historical baselines and (ii)~fast-changing temporal and local shocks. The conformal prediction framework described in Section~\ref{subsec:conformal_prediction} explicitly treats this decomposition by using a fixed point predictor for the first component and a data-driven, recalibrated quantile for the second.
+
+% ------------------------------------------------------------
+\subsection{Summary and Implications for the Conformal Prediction Experiments}
+\label{subsec:baseline_summary_results}
+% ------------------------------------------------------------
+
+The baseline results in this section establish three quantitative properties that directly motivate the three conformal prediction experiments:
+
+\begin{enumerate}
+    \item \textbf{Accuracy degrades with temporal distance.} Route-level MAE grows by 5.47\% from Test-Near to Test-Far, with a daily slope of $+1.94$~s/day (Figure~\ref{fig:daily_mae_trend}). This is the point-prediction-level signature of the distribution shift, and it sets a concrete benchmark that the adaptive conformal methods studied in Experiment~2 must be able to match or exceed.
+    \item \textbf{Residuals are heteroscedastic and heavy-tailed.} Figure~\ref{fig:residual_analysis} shows a megaphone residual pattern, a sharply peaked but skewed residual distribution, and heavy Q-Q tails. These properties rule out Gaussian-style uncertainty intervals and justify the distribution-free conformal prediction approach used throughout the thesis, as well as the normalized (per-segment) variant used in Experiment~3.
+    \item \textbf{Segment-level difficulty is spatially heterogeneous.} Figure~\ref{fig:segment_mae_position} shows that a small number of segments account for a disproportionate share of segment-level error. This spatial structure is the empirical premise of Research Question~3: because segment difficulty is non-uniform, route-level uncertainty can be meaningfully decomposed into per-segment contributions, and that decomposition can identify \emph{where} operational interventions would have the largest effect.
+\end{enumerate}
+
+Together, these three findings convert the qualitative expectations of Chapter~\ref{ch:introduction} into quantitative baseline evidence. The remaining sections of this chapter report the results of the three conformal prediction experiments built on top of this baseline.
+
+% ============================================================
+\section{Experiment 1: Static Conformal Prediction Under Drift}
+\label{sec:exp1_results}
+% ============================================================
+
+\textit{This section will be populated with the Experiment~1 results in a subsequent revision.}
+
+% ============================================================
+\section{Experiment 2: Online Adaptive Conformal Prediction}
+\label{sec:exp2_results}
+% ============================================================
+
+\textit{This section will be populated with the Experiment~2 results in a subsequent revision.}
+
+% ============================================================
+\section{Experiment 3: Segment-Level Uncertainty Decomposition}
+\label{sec:exp3_results}
+% ============================================================
+
+\textit{This section will be populated with the Experiment~3 results in a subsequent revision.}

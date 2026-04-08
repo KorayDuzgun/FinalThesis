@@ -534,7 +534,7 @@ Two separate XGBoost models were trained: a \textbf{route-level model} predictin
 \subsubsection{Hyperparameter Tuning}
 \label{subsubsec:hyperparameter_tuning}
 
-Hyperparameters were optimized using \textbf{Randomized Search Cross-Validation} with 50~random configurations sampled from the search space shown in Table~\ref{tab:hyperparam_search}.
+Hyperparameters were optimized using \textbf{Randomized Search Cross-Validation} with 50~random configurations sampled from the search space shown in Table~\ref{tab:hyperparam_search}. Random sampling was chosen over exhaustive grid search because Bergstra and Bengio~\cite{bergstra2012random} showed that, for high-dimensional hyperparameter spaces, random search typically matches or exceeds the validation performance of grid search at a fraction of the computational cost, by exploring more unique values along the most influential dimensions rather than wasting trials on redundant combinations in the less important ones.
 
 \begin{table}[htbp]
 \centering
@@ -588,61 +588,7 @@ Tree method & \multicolumn{2}{c}{\texttt{hist}} \\
 \end{tabular}
 \end{table}
 
-After hyperparameter selection, the final models were retrained on the full training set (W1--W3: 7,598 route-level trips; 289,331 segment-level records).
-
-\subsubsection{Model Performance}
-\label{subsubsec:model_performance}
-
-Table~\ref{tab:model_performance} shows the route-level model's performance across temporal periods.
-
-\begin{table}[htbp]
-\centering
-\caption{Route-level XGBoost performance across temporal periods (W1--W3 training, W4 calibration, W5--W8 test).}
-\label{tab:model_performance}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Period} & \textbf{MAE (s)} & \textbf{RMSE (s)} & \textbf{MAPE (\%)} & \textbf{Samples} \\
-\midrule
-Train (W1--W3) & 511.65 & 771.89 & 8.72 & 7,598 \\
-Calibration (W4) & 816.54 & 1,223.56 & 13.42 & 2,740 \\
-Test-Near (W5) & 789.42 & 1,184.61 & 12.95 & 2,707 \\
-Test-Mid (W6) & 845.23 & 1,267.82 & 13.87 & 1,833 \\
-Test-Far (W7--W8) & 912.68 & 1,368.45 & 14.98 & 4,736 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Two important observations emerge from these results:
-
-\textbf{Temporal drift confirmation.} MAE increases monotonically from Test-Near (789.42~s) to Test-Far (912.68~s), a 15.6\% increase. This growing error with temporal distance confirms the distribution shift identified in Section~\ref{subsubsec:dataset_characteristics} and demonstrates that the model's accuracy degrades over time—further motivating the need for adaptive uncertainty estimation.
-
-\textbf{Heteroscedastic residuals.} Residual analysis revealed that prediction error variance increases with the predicted value: trips with longer predicted travel times have larger absolute errors. This heteroscedasticity means that fixed-width prediction intervals (a property of basic split conformal prediction) will be too narrow for long trips and too wide for short ones. Additionally, peak-hour MAE ($\approx$950~s) was approximately 1.36$\times$ higher than off-peak MAE ($\approx$700~s), indicating time-dependent error structure.
-
-Table~\ref{tab:segment_performance} shows the segment-level model's performance, which follows a similar temporal degradation pattern.
-
-\begin{table}[htbp]
-\centering
-\caption{Segment-level XGBoost performance across temporal periods.}
-\label{tab:segment_performance}
-\begin{tabular}{lrrrr}
-\toprule
-\textbf{Period} & \textbf{MAE (s)} & \textbf{RMSE (s)} & \textbf{MAPE (\%)} & \textbf{Samples} \\
-\midrule
-Train (W1--W3) & 23.45 & 42.17 & 11.23 & 289,331 \\
-Calibration (W4) & 32.67 & 58.92 & 15.47 & 104,655 \\
-Test-Near (W5) & 31.84 & 56.78 & 15.12 & 103,700 \\
-Test-Mid (W6) & 34.12 & 61.45 & 16.23 & 69,537 \\
-Test-Far (W7--W8) & 38.19 & 68.34 & 18.15 & 180,575 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-The segment-level MAE increases by 20.0\% from Test-Near (31.84~s) to Test-Far (38.19~s), confirming that temporal drift affects both route-level and segment-level predictions. Across individual segments, MAE ranges from 10.67~s to 334.33~s, reflecting the spatial heterogeneity that motivates the segment-level uncertainty decomposition in Experiment~3.
-
-\subsubsection{Feature Importance}
-\label{subsubsec:feature_importance}
-
-Feature importance analysis revealed that \textbf{historical route statistics} (particularly \texttt{hist\_route\_mean} and \texttt{hist\_route\_median}) are the most influential features, confirming that recent historical performance is the strongest predictor of future travel time. Time-of-day features (\texttt{hour\_of\_day}, cyclical encodings) provided secondary importance, capturing systematic daily traffic patterns. Route and direction identifiers also contributed, reflecting the structural differences between routes documented in Table~\ref{tab:route_level_stats}.
+After hyperparameter selection, the final models were retrained on the full training set (W1--W3: 7,598 route-level trips; 289,331 segment-level records). The quantitative performance of these trained models on the calibration and test periods, the structure of their residuals, and the spatial heterogeneity of segment-level errors are presented and discussed in Chapter~\ref{ch:results} (Section~\ref{sec:baseline_results}).
 
 % ------------------------------------------------------------
 \subsection{Conformal Prediction Framework}
@@ -667,14 +613,14 @@ The choice of NCM function directly affects interval efficiency. A simple NCM pr
     \item \textbf{Signed residual}: $r_i = y_i - \hat{y}_i$ — enables asymmetric intervals and conformal predictive distributions.
 \end{itemize}
 
-This thesis uses two NCM variants across its three experiments. Experiments~1 and~2 use the \textbf{absolute residual} NCM:
+This thesis uses two NCM variants across its three experiments. Experiments~1 and~2 use the \textbf{absolute residual} NCM induced by the default split conformal regressor of the \texttt{calibrated\_explanations} library (which internally wraps the \texttt{crepes} conformal predictive system):
 \begin{equation}
     R_i = |y_i - \hat{y}_i|
     \label{eq:nonconformity}
 \end{equation}
-where $y_i$ is the true value and $\hat{y}_i$ is the model's point prediction for calibration sample $i$. This choice is deliberate: Experiments~1 and~2 aim to isolate the effect of \emph{calibration set management} (static vs.\ online) on coverage. Using a fixed NCM function ensures that any observed differences in coverage are attributable to the calibration strategy, not to the NCM. If both the calibration strategy and the NCM were changed simultaneously, it would be unclear which factor drives the improvement.
+where $y_i$ is the true value and $\hat{y}_i$ is the model's point prediction for calibration sample $i$. In practice, this produces symmetric prediction intervals of the form $[\hat{y}_{\text{new}} - \hat{q},\; \hat{y}_{\text{new}} + \hat{q}]$ via a single quantile of the calibration residual magnitudes. This choice is deliberate: Experiments~1 and~2 aim to isolate the effect of \emph{calibration set management} (static vs.\ online) on coverage. Holding the NCM fixed across both experiments ensures that any observed differences in coverage are attributable to the calibration strategy, not to the NCM. If both the calibration strategy and the NCM were changed simultaneously, it would be unclear which factor drives the improvement.
 
-Experiment~3 uses the \textbf{normalized residual} NCM at the segment level ($R_i = |y_i - \hat{y}_i| / \sigma_s$, where $\sigma_s$ is the median absolute deviation of residuals for segment $s$), producing adaptive interval widths that reflect segment-specific prediction difficulty. This is described in Section~\ref{subsubsec:normalized_cp}.
+Experiment~3 uses the \textbf{normalized residual} NCM at the segment level ($\tilde{R}_i = |y_i - \hat{y}_i| / \sigma_{s(i)}$, where $\sigma_{s(i)}$ is the median of absolute residuals for segment $s(i)$), producing adaptive interval widths that reflect segment-specific prediction difficulty. This is described in Section~\ref{subsubsec:normalized_cp}.
 
 \paragraph{Coverage Guarantee.}
 Given a set of $n$ calibration samples with nonconformity scores $\{R_1, R_2, \ldots, R_n\}$, conformal prediction computes a quantile threshold:
@@ -712,7 +658,7 @@ Figure~\ref{fig:cpd_visualization} illustrates a CPD for a single test sample, s
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{figures/3.8.png}
+    \includegraphics[width=\textwidth]{figures/3_8.png}
     \caption{Conformal predictive distribution (CPD) for a single test sample. \textbf{Left}: The CPD step function $p(t) = P(y < t)$, with three threshold queries marked. The 90\% prediction interval corresponds to the range between the 5th and 95th percentiles of the distribution. \textbf{Right}: Example operational queries that CPDs enable, translating statistical uncertainty into actionable transit decisions.}
     \label{fig:cpd_visualization}
 \end{figure}
@@ -726,8 +672,10 @@ Figure~\ref{fig:cp_visualization} illustrates the complete split conformal predi
     \label{fig:cp_visualization}
 \end{figure}
 
-\subsubsection{Static Conformal Prediction (Experiment~1)}
-\label{subsubsec:static_cp}
+% ------------------------------------------------------------
+\subsection{Static Conformal Prediction (Experiment~1)}
+\label{subsec:static_cp}
+% ------------------------------------------------------------
 
 In static (or ``offline'') conformal prediction, the calibration set is fixed and never updated after the initial computation. This is the simplest form of conformal prediction and serves as the baseline approach in this thesis.
 
@@ -772,12 +720,14 @@ Static CP was evaluated at three confidence levels (80\%, 90\%, 95\%) across thr
     \item \textbf{Test-Far} (W7--W8): 15--27 days after calibration, maximum expected drift
 \end{itemize}
 
-This design creates a natural gradient for measuring how coverage degrades as the temporal distance from the calibration set increases. The primary confidence level used throughout this thesis is 90\% ($\alpha = 0.10$).
+This design creates a natural gradient for measuring how coverage degrades as the temporal distance from the calibration set increases. The primary confidence level used throughout this thesis is \textbf{90\%} ($\alpha = 0.10$), chosen for three reasons. First, 90\% is the most common nominal coverage level in the transit ETA uncertainty literature, which enables direct comparison with prior work. Second, at this level the prediction intervals remain narrow enough to be operationally actionable---a 90-minute trip with a $\pm$25~minute interval is informative for passenger decision-making, whereas the same trip with a $\pm$60~minute interval at 99\% confidence would be too wide to support any practical decision. Third, 90\% provides enough statistical headroom to detect both under- and over-coverage: at 99\% confidence, even severe miscalibration only drops empirical coverage into the mid-80s, which is hard to distinguish from normal sampling variation. Secondary analyses at 80\% and 95\% confirm that the main findings on coverage degradation are robust across confidence regimes rather than an artifact of the specific 90\% target.
 
 The implementation uses the \texttt{calibrated\_explanations} Python library~\cite{lofstrom2024calibrated}, specifically the \texttt{WrapCalibratedExplainer} class, which wraps the pre-trained XGBoost model and provides methods for generating calibrated prediction intervals.
 
-\subsubsection{Online Adaptive Conformal Prediction (Experiment~2)}
-\label{subsubsec:online_cp}
+% ------------------------------------------------------------
+\subsection{Online Adaptive Conformal Prediction (Experiment~2)}
+\label{subsec:online_cp}
+% ------------------------------------------------------------
 
 When the data distribution changes over time, the fixed calibration set used by static CP becomes stale, and the coverage guarantee degrades. Online adaptive conformal prediction addresses this by \textbf{continuously updating the calibration set} with newly observed data, allowing the nonconformity quantile to adapt to the current distribution.
 
@@ -878,25 +828,43 @@ This bottom-up approach contrasts with the top-down route-level conformal predic
 \subsubsection{Normalized Conformal Prediction at Segment Level}
 \label{subsubsec:normalized_cp}
 
-Standard split conformal prediction assigns the same interval width to all predictions, which is suboptimal when different segments have inherently different levels of predictability. \textbf{Normalized conformal prediction} addresses this by computing separate nonconformity quantiles for each segment, producing \textbf{adaptive interval widths}:
+Standard split conformal prediction assigns the same interval width to all predictions, which is suboptimal when different segments have inherently different levels of predictability. \textbf{Normalized conformal prediction}~\cite{papadopoulos2002inductive} addresses this by dividing each calibration residual by a segment-specific difficulty estimate before computing a single global quantile threshold. The resulting interval width is rescaled by each test sample's local difficulty, producing \textbf{adaptive interval widths}:
 
 \begin{itemize}
     \item Segments that are harder to predict (higher historical variance, complex traffic patterns) receive \textbf{wider intervals}.
     \item Segments that are easier to predict (stable conditions, open roads) receive \textbf{narrower intervals}.
 \end{itemize}
 
-For each segment $s$, the nonconformity quantile $\hat{q}_s$ is computed using only the calibration residuals from that segment:
-\begin{equation}
-    \hat{q}_s = \text{Quantile}\!\left(\{R_i : i \in \mathcal{C}_s\},\; \frac{\lceil(|\mathcal{C}_s|+1)(1-\alpha)\rceil}{|\mathcal{C}_s|}\right)
-    \label{eq:segment_quantile}
-\end{equation}
-where $\mathcal{C}_s$ is the set of calibration samples belonging to segment $s$, and $R_i = |y_i - \hat{y}_i|$ are the absolute residuals from the segment-level model.
+The construction proceeds in four steps.
 
-The prediction interval for a test sample in segment $s$ is then:
+\textbf{Step 1 --- Per-segment difficulty estimate.} For each segment $s$, the difficulty estimate $\sigma_s$ is computed as the median of absolute calibration residuals drawn from that segment:
 \begin{equation}
-    C_s(x) = [\hat{y} - \hat{q}_s,\; \hat{y} + \hat{q}_s]
+    \sigma_s = \text{median}\!\left(\{|R_i| : i \in \mathcal{C}_s\}\right) + \varepsilon
+    \label{eq:segment_sigma}
+\end{equation}
+where $\mathcal{C}_s$ is the set of calibration samples belonging to segment $s$, $R_i = y_i - \hat{y}_i$ is the signed residual for sample $i$, and $\varepsilon = 10^{-6}$ is a small constant added for numerical stability (to avoid division by zero on very-low-variance segments). Segments with fewer than 30~calibration samples fall back to a global median-absolute-residual estimate.
+
+\textbf{Step 2 --- Normalized nonconformity scores.} Each calibration residual is normalized by its segment's difficulty estimate, producing a dimensionless score:
+\begin{equation}
+    \tilde{R}_i = \frac{|R_i|}{\sigma_{s(i)}}
+    \label{eq:normalized_score}
+\end{equation}
+where $s(i)$ denotes the segment to which calibration sample $i$ belongs. Intuitively, $\tilde{R}_i$ measures how unusual sample $i$'s error is \emph{relative to other samples in its own segment}, placing all segments on a common scale regardless of their absolute difficulty.
+
+\textbf{Step 3 --- Global normalized quantile.} A \emph{single} quantile threshold is computed over the normalized scores from all $n$ calibration samples:
+\begin{equation}
+    \hat{q} = \text{Quantile}\!\left(\{\tilde{R}_i\}_{i=1}^{n},\; \frac{\lceil(n+1)(1-\alpha)\rceil}{n}\right)
+    \label{eq:normalized_quantile}
+\end{equation}
+Using a single global quantile (rather than one per segment) is deliberate: it preserves the finite-sample coverage guarantee of split conformal prediction, because the quantile is always estimated from the full calibration set and is therefore insensitive to rare segments with very few samples.
+
+\textbf{Step 4 --- Adaptive prediction interval.} Finally, the prediction interval for a test sample in segment $s$ is formed by scaling the global threshold by the segment's own difficulty estimate:
+\begin{equation}
+    C_s(x) = [\hat{y} - \hat{q}\cdot\sigma_s,\; \hat{y} + \hat{q}\cdot\sigma_s]
     \label{eq:segment_interval}
 \end{equation}
+
+This construction produces interval widths that are proportional to each segment's historical difficulty (via $\sigma_s$) while preserving the split conformal coverage guarantee (via the global quantile $\hat{q}$).
 
 \subsubsection{Route-Level Aggregation}
 \label{subsubsec:route_aggregation}
@@ -925,7 +893,7 @@ By the union bound, the probability that any segment is \emph{not} covered is at
     \label{eq:bonferroni_guarantee}
 \end{equation}
 
-Therefore, the route-level coverage is guaranteed to be at least $1-\alpha$. However, with 35--44 segments per trip, the per-segment confidence becomes very high ($\approx$99.7\%), resulting in very wide segment-level intervals. This conservatism is the main drawback of the Bonferroni approach.
+Therefore, the route-level coverage is guaranteed to be at least $1-\alpha$. However, with 30--51 segments per trip (mean $\approx$38), the per-segment confidence becomes very high, ranging from $1 - 0.10/30 \approx 99.67\%$ to $1 - 0.10/51 \approx 99.80\%$, and resulting in very wide segment-level intervals. This conservatism is the main drawback of the Bonferroni approach.
 
 \subsubsection{Uncertainty Attribution}
 \label{subsubsec:uncertainty_attribution}
@@ -1044,3 +1012,19 @@ To determine whether observed differences between methods are statistically sign
 \textbf{Holm-Bonferroni Correction}: When multiple pairwise comparisons are conducted (e.g., three online methods vs.\ static CP), the family-wise error rate is inflated. To control this, all raw $p$-values within each comparison family are adjusted using the Holm-Bonferroni method~\cite{holm1979simple}. This sequentially rejective procedure is less conservative than the classical Bonferroni correction while still controlling the family-wise error rate at $\alpha = 0.05$. Specifically, in Experiment~2, three comparisons are made (Expanding, Sliding-7d, Sliding-14d vs.\ Static CP), and in the hourly analysis, three additional comparisons are made (Hourly vs.\ Daily for each window type). The Holm-Bonferroni correction is applied separately within each family of comparisons.
 
 \textbf{Bootstrap Confidence Intervals}: 10,000 bootstrap resamples of the daily PICP differences are used to construct 95\% confidence intervals for the mean PICP improvement of one method over another. If the confidence interval excludes zero, the improvement is statistically significant.
+
+
+% ============================================================
+\section{Methodological Design Choices and Limitations}
+\label{sec:methodology_limitations}
+% ============================================================
+
+Several of the design choices described in this chapter are deliberate scope restrictions rather than oversights, and are therefore best understood as limitations of the methodology itself. Four deserve explicit acknowledgment here, with a fuller discussion of their implications deferred to Chapter~\ref{ch:discussion} (Section~\ref{sec:limitations}).
+
+\textbf{Single baseline model.} The point-prediction stage uses XGBoost exclusively. Deep-learning alternatives such as LSTM, GRU, or Transformer models are not compared. XGBoost was chosen for its strong baseline accuracy, computational efficiency, and tolerance of mixed feature types, all of which make it a practical wrapper target for conformal prediction. However, the findings on coverage degradation may not directly transfer to models whose residual structures are qualitatively different (e.g., recurrent models that explicitly propagate temporal state).
+
+\textbf{Fixed nonconformity measure in Experiments 1 and 2.} Both the static and online experiments use the absolute residual NCM throughout. This is a deliberate experimental control: holding the NCM fixed isolates the effect of calibration set management from the effect of NCM choice. A consequence is that the online coverage improvements reported in Experiment~2 should be interpreted as a lower bound---combining online calibration with an adaptive NCM (such as the normalized NCM used in Experiment~3) would likely yield both better coverage and narrower intervals, but this combination was not empirically evaluated.
+
+\textbf{Two-fold temporal cross-validation.} The forward-chaining CV used for hyperparameter search has only two folds (W1$\rightarrow$W2 and W1--W2$\rightarrow$W3), which is the maximum number of non-overlapping folds obtainable from a three-week training window while respecting temporal ordering. More folds would require either borrowing weeks from the calibration or test periods (which would compromise the conformal prediction experiments downstream) or collecting a longer training window. The two-fold constraint limits the variance control on the hyperparameter search, and should be kept in mind when interpreting the reported generalization gap.
+
+\textbf{Single city and 55-day observation window.} The dataset covers three bus routes in Astana, Kazakhstan, over 55~days from late July to late September~2024. This window spans late summer to early autumn and does not include winter conditions, school holidays, or major infrastructure changes. The generalizability of the findings to other cities, climates, and seasons has not been empirically tested. These constraints are not methodological flaws but practical scope decisions, and they frame the external validity of the results reported in Chapter~\ref{ch:results}.
