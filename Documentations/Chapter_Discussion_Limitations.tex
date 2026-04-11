@@ -53,6 +53,28 @@ These two dimensions are orthogonal: online calibration improves coverage but no
 
 This separation is both a strength and a limitation of the thesis design. It is a strength because it provides clear, interpretable evidence for each component's contribution. It is a limitation because the practical recommendation for deployment — combining both approaches — is not empirically validated.
 
+\subsection{Mondrian and Normalized CP: Redistribution vs.\ Recovery}
+
+Experiments 1b and 2d investigated two alternative strategies for improving interval quality without online recalibration: Mondrian CP (conditional calibration by \texttt{time\_period} $\times$ \texttt{route}, 15 bins) and Normalized CP with a \texttt{DifficultyEstimator} (per-sample adaptive widths via KNN-based difficulty scores).
+
+Mondrian CP partitions the calibration set into spatial-temporal bins and computes separate conformal quantiles per bin ($q_{\text{bin}}$). This produces category-specific interval widths — wider for hard-to-predict bins (e.g., morning peak on long routes) and narrower for predictable bins (e.g., evening on short routes). However, overall PICP decreased slightly (0.609 $\to$ 0.590) because the narrower intervals for ``easy'' bins exposed more misses, while the wider intervals for ``hard'' bins were still insufficient under drift. The Winkler score improved (9,545 $\to$ 9,026), confirming better interval \emph{quality} despite lower \emph{coverage}.
+
+Normalized CP takes a finer-grained approach: instead of 15 categorical quantiles, it computes a single normalized quantile $q_{\text{norm}}$ from residuals divided by per-sample difficulty scores ($\sigma_i$), then scales each interval as $\hat{y}_i \pm q_{\text{norm}} \cdot \sigma_i$. This achieved the lowest Winkler score across all static methods (6,968) — indicating the most efficient uncertainty budget allocation — while maintaining similar coverage to Static CP (PICP = 0.607).
+
+The critical insight is that \textbf{neither approach improves coverage under drift}. Both Mondrian and Normalized CP address \emph{heteroscedasticity} (different prediction difficulty across samples), not \emph{non-stationarity} (changing data distribution over time). Under drift, all bins and all difficulty regions are affected simultaneously — the calibration quantiles become stale regardless of how they are partitioned or normalized.
+
+The \texttt{calibrated\_explanations} framework supports simultaneous Mondrian binning and difficulty estimation (normalized Mondrian CP), which would provide both per-category and per-sample adaptive intervals: $\hat{y}_i \pm q_{\text{bin,norm}} \cdot \sigma_i$, with 15 different normalized quantiles. This combination represents the most granular uncertainty quantification possible within the framework. However, it was not implemented in this thesis for two reasons: (1) the minimum bin size in calibration (55 samples for the smallest bin) would produce unreliable normalized quantile estimates when further divided by difficulty, and (2) both components individually failed to recover coverage under drift, making their combination unlikely to yield qualitatively different results. This extension warrants investigation in future work with larger calibration datasets.
+
+\subsection{Adaptive Conformal Inference as Future Direction}
+
+Our results demonstrate a persistent coverage gap: even the best online method (Hourly Expanding, PICP = 76.1\%) falls 14 percentage points short of the 90\% target. This gap is a fundamental consequence of the exchangeability assumption underlying conformal prediction — an assumption that temporal distribution shift systematically violates.
+
+Recent theoretical advances address this limitation directly. Adaptive Conformal Inference (ACI), proposed by Gibbs and Cand\`{e}s (2021), dynamically adjusts the miscoverage rate $\alpha_t$ based on observed errors:
+\[
+\alpha_{t+1} = \alpha_t + \gamma(\alpha_t - \text{err}_t)
+\]
+where $\text{err}_t \in \{0, 1\}$ indicates whether sample $t$ was missed, and $\gamma$ is a step-size parameter. This feedback mechanism widens intervals after misses and narrows them after successful coverage, providing long-run average coverage guarantees \emph{without requiring exchangeability}. Investigating ACI in the bus ETA context — particularly in combination with the online calibration and difficulty estimation strategies developed in this thesis — represents a promising direction for future work.
+
 
 % ============================================================
 \section{Limitations}

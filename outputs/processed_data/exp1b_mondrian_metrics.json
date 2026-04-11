@@ -1,0 +1,176 @@
+{
+  "experiment": "Phase 4b / Experiment 1b: Mondrian (Conditional) CP",
+  "research_question": "RQ1b: Does Mondrian CP improve conditional coverage and interval efficiency?",
+  "binning_strategy": "time_period \u00d7 route_short_name (15 bins, night fallback)",
+  "confidence": 0.9,
+  "bin_labels": {
+    "0": [
+      "early_morning",
+      "10"
+    ],
+    "1": [
+      "early_morning",
+      "12"
+    ],
+    "2": [
+      "early_morning",
+      "46"
+    ],
+    "3": [
+      "morning_peak",
+      "10"
+    ],
+    "4": [
+      "morning_peak",
+      "12"
+    ],
+    "5": [
+      "morning_peak",
+      "46"
+    ],
+    "6": [
+      "midday",
+      "10"
+    ],
+    "7": [
+      "midday",
+      "12"
+    ],
+    "8": [
+      "midday",
+      "46"
+    ],
+    "9": [
+      "evening_peak",
+      "10"
+    ],
+    "10": [
+      "evening_peak",
+      "12"
+    ],
+    "11": [
+      "evening_peak",
+      "46"
+    ],
+    "12": [
+      "evening",
+      "10"
+    ],
+    "13": [
+      "evening",
+      "12"
+    ],
+    "14": [
+      "evening",
+      "46"
+    ]
+  },
+  "metrics_global": {
+    "calibration": {
+      "MAE": 329.9320039846601,
+      "RMSE": 551.1894607522403,
+      "MAPE": 6.662136147158912,
+      "PICP": 0.9007299270072993,
+      "MPIW": 1528.3115234375,
+      "NMPIW": 0.1561094508107763,
+      "Calibration_Error": 0.0007299270072992359,
+      "CWC": 0.1561094508107763,
+      "Winkler_Score": 2826.490284272354,
+      "temporal_distance_days": -3.1744525547445255,
+      "n_samples": 2740
+    },
+    "test_near": {
+      "MAE": 901.058778321034,
+      "RMSE": 1335.604196169291,
+      "MAPE": 18.445259670242432,
+      "PICP": 0.6169190986331733,
+      "MPIW": 1528.3115234375,
+      "NMPIW": 0.13784716545841977,
+      "Calibration_Error": 0.28308090136682673,
+      "CWC": 193384.570181701,
+      "Winkler_Score": 9738.911342771633,
+      "temporal_distance_days": 3.8588843738455854,
+      "n_samples": 2707
+    },
+    "test_mid": {
+      "MAE": 914.5044250987751,
+      "RMSE": 1316.7772386166878,
+      "MAPE": 19.550709430847533,
+      "PICP": 0.6028368794326241,
+      "MPIW": 1528.3115234375,
+      "NMPIW": 0.1770928764122248,
+      "Calibration_Error": 0.2971631205673759,
+      "CWC": 502361.58204552485,
+      "Winkler_Score": 9767.223500686205,
+      "temporal_distance_days": 11.577741407528642,
+      "n_samples": 1833
+    },
+    "test_far": {
+      "MAE": 889.4486031918913,
+      "RMSE": 1305.3848301669013,
+      "MAPE": 17.7645682512406,
+      "PICP": 0.6070523648648649,
+      "MPIW": 1528.3115234375,
+      "NMPIW": 0.1477914634404313,
+      "Calibration_Error": 0.2929476351351351,
+      "CWC": 339567.8851825904,
+      "Winkler_Score": 9347.34672051507,
+      "temporal_distance_days": 20.566722972972972,
+      "n_samples": 4736
+    }
+  },
+  "metrics_mondrian": {
+    "calibration": {
+      "MAE": 329.44037613694684,
+      "RMSE": 551.6217380404619,
+      "MAPE": 6.65449122525687,
+      "PICP": 0.8981751824817519,
+      "MPIW": 1657.7615589002623,
+      "NMPIW": 0.16933213063332608,
+      "Calibration_Error": 0.0018248175182481452,
+      "CWC": 0.35484104415789725,
+      "Winkler_Score": 2620.7252336265396,
+      "temporal_distance_days": -3.1744525547445255,
+      "n_samples": 2740
+    },
+    "test_near": {
+      "MAE": 899.5922529589086,
+      "RMSE": 1333.448008826366,
+      "MAPE": 18.416034914027062,
+      "PICP": 0.5947543405984484,
+      "MPIW": 1671.4379412929732,
+      "NMPIW": 0.15075655644385075,
+      "Calibration_Error": 0.3052456594015516,
+      "CWC": 640621.612346478,
+      "Winkler_Score": 9492.041413266676,
+      "temporal_distance_days": 3.8588843738455854,
+      "n_samples": 2707
+    },
+    "test_mid": {
+      "MAE": 913.3439575128716,
+      "RMSE": 1316.0463422925106,
+      "MAPE": 19.527243463936966,
+      "PICP": 0.5619203491543917,
+      "MPIW": 1653.223529189256,
+      "NMPIW": 0.1915670369860088,
+      "Calibration_Error": 0.3380796508456083,
+      "CWC": 4203655.739472686,
+      "Winkler_Score": 9660.47903161015,
+      "temporal_distance_days": 11.577741407528642,
+      "n_samples": 1833
+    },
+    "test_far": {
+      "MAE": 888.9618678221832,
+      "RMSE": 1304.0397694666347,
+      "MAPE": 17.76503110362764,
+      "PICP": 0.5850929054054054,
+      "MPIW": 1699.8053465662776,
+      "NMPIW": 0.1643753357089525,
+      "Calibration_Error": 0.31490709459459465,
+      "CWC": 1132289.266845615,
+      "Winkler_Score": 8982.28881140013,
+      "temporal_distance_days": 20.566722972972972,
+      "n_samples": 4736
+    }
+  }
+}

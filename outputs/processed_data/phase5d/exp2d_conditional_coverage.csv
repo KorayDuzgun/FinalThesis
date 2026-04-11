@@ -1,0 +1,51 @@
+Method,Period,Group,Category,PICP,MPIW,n
+Static CP,test_near,time_period,early_morning,0.7521367521367521,1528.3115234375,234
+Static CP,test_near,time_period,evening,0.5925925925925926,1528.3115234375,351
+Static CP,test_near,time_period,evening_peak,0.5696821515892421,1528.3115234375,409
+Static CP,test_near,time_period,midday,0.5596153846153846,1528.3115234375,1040
+Static CP,test_near,time_period,morning_peak,0.7136294027565084,1528.3115234375,653
+Static CP,test_near,time_period,night,0.25,1528.3115234375,20
+Static CP,test_near,route,10,0.6612903225806451,1528.3115234375,930
+Static CP,test_near,route,12,0.5850439882697948,1528.3115234375,682
+Static CP,test_near,route,46,0.5990867579908675,1528.3115234375,1095
+Normalized CP (DE),test_near,time_period,early_morning,0.6666666666666666,1388.1191200300027,234
+Normalized CP (DE),test_near,time_period,evening,0.5042735042735043,1268.9753806460144,351
+Normalized CP (DE),test_near,time_period,evening_peak,0.5696821515892421,1988.963500895579,409
+Normalized CP (DE),test_near,time_period,midday,0.5961538461538461,2806.093048283411,1040
+Normalized CP (DE),test_near,time_period,morning_peak,0.6355283307810107,1741.7195017589872,653
+Normalized CP (DE),test_near,time_period,night,0.1,1675.5969581532809,20
+Normalized CP (DE),test_near,route,10,0.5225806451612903,1728.6675251686675,930
+Normalized CP (DE),test_near,route,12,0.5601173020527859,2125.1265276752783,682
+Normalized CP (DE),test_near,route,46,0.6712328767123288,2388.959596625657,1095
+Static CP,test_mid,time_period,early_morning,0.7285714285714285,1528.3115234375,140
+Static CP,test_mid,time_period,evening,0.6259541984732825,1528.3115234375,262
+Static CP,test_mid,time_period,evening_peak,0.5533980582524272,1528.3115234375,309
+Static CP,test_mid,time_period,midday,0.5658465991316932,1528.3115234375,691
+Static CP,test_mid,time_period,morning_peak,0.641860465116279,1528.3115234375,430
+Static CP,test_mid,route,10,0.676056338028169,1528.3115234375,639
+Static CP,test_mid,route,12,0.5638766519823789,1528.3115234375,454
+Static CP,test_mid,route,46,0.5635135135135135,1528.3115234375,740
+Normalized CP (DE),test_mid,time_period,early_morning,0.65,1391.0624659661303,140
+Normalized CP (DE),test_mid,time_period,evening,0.5038167938931297,1296.841099738937,262
+Normalized CP (DE),test_mid,time_period,evening_peak,0.5825242718446602,2215.01982594001,309
+Normalized CP (DE),test_mid,time_period,midday,0.5962373371924746,2656.223033477359,691
+Normalized CP (DE),test_mid,time_period,morning_peak,0.5953488372093023,1785.7340781204032,430
+Normalized CP (DE),test_mid,route,10,0.596244131455399,1771.758372384098,639
+Normalized CP (DE),test_mid,route,12,0.5198237885462555,2224.5923395501636,454
+Normalized CP (DE),test_mid,route,46,0.6148648648648649,2272.1962152599453,740
+Static CP,test_far,time_period,early_morning,0.7413333333333333,1528.3115234375,375
+Static CP,test_far,time_period,evening,0.6581875993640699,1528.3115234375,629
+Static CP,test_far,time_period,evening_peak,0.665,1528.3115234375,800
+Static CP,test_far,time_period,midday,0.5338666666666667,1528.3115234375,1875
+Static CP,test_far,time_period,morning_peak,0.6145833333333334,1528.3115234375,1056
+Static CP,test_far,route,10,0.6514611546685674,1528.3115234375,1403
+Static CP,test_far,route,12,0.6108597285067874,1528.3115234375,1326
+Static CP,test_far,route,46,0.5734927752864972,1528.3115234375,2007
+Normalized CP (DE),test_far,time_period,early_morning,0.6373333333333333,1412.9939713539345,375
+Normalized CP (DE),test_far,time_period,evening,0.5882352941176471,1347.4629316460237,629
+Normalized CP (DE),test_far,time_period,evening_peak,0.63125,1845.8064046326558,800
+Normalized CP (DE),test_far,time_period,midday,0.6512,3022.936269096616,1875
+Normalized CP (DE),test_far,time_period,morning_peak,0.5823863636363636,1796.4766682794968,1056
+Normalized CP (DE),test_far,route,10,0.5673556664290805,1752.0735533806685,1403
+Normalized CP (DE),test_far,route,12,0.5844645550527904,2178.7484958247883,1326
+Normalized CP (DE),test_far,route,46,0.6875934230194319,2528.178956951074,2007

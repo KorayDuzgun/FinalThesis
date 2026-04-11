@@ -580,3 +580,441 @@ def compute_segment_uncertainty_attribution(
     df['cumulative_width'] = df['width'].cumsum()
 
     return df
+
+
+# =============================================================================
+# Mondrian (Conditional) Conformal Prediction
+# =============================================================================
+
+# Mondrian bins that have sufficient calibration samples
+MONDRIAN_VALID_TIME_PERIODS = [
+    'early_morning', 'morning_peak', 'midday', 'evening_peak', 'evening'
+]
+
+# Night period excluded due to insufficient calibration data (≤2 samples)
+MONDRIAN_FALLBACK_PERIOD = 'night'
+
+
+def assign_mondrian_bins(time_periods, route_names):
+    """Assign Mondrian bin IDs from (time_period, route) combinations.
+
+    Night-period samples are assigned bin_id = -1 (fallback to global).
+    Valid bins are assigned sequential integer IDs.
+
+    Parameters
+    ----------
+    time_periods : array-like
+        Time period labels for each sample (e.g., 'morning_peak')
+    route_names : array-like
+        Route identifiers for each sample (e.g., 10, 12, 46)
+
+    Returns
+    -------
+    bins : np.ndarray of int
+        Bin ID per sample (-1 = fallback/night)
+    bin_labels : dict
+        Mapping from bin_id -> (time_period, route) human-readable label
+    """
+    time_periods = np.asarray(time_periods)
+    route_names = np.asarray(route_names)
+
+    # Build mapping: (time_period, route) -> int bin_id
+    unique_routes = sorted(set(route_names))
+    bin_labels = {}
+    label_to_id = {}
+    next_id = 0
+
+    for tp in MONDRIAN_VALID_TIME_PERIODS:
+        for route in unique_routes:
+            key = (tp, route)
+            bin_labels[next_id] = key
+            label_to_id[key] = next_id
+            next_id += 1
+
+    # Assign bin IDs
+    bins = np.full(len(time_periods), -1, dtype=int)
+    for i in range(len(time_periods)):
+        key = (time_periods[i], route_names[i])
+        if key in label_to_id:
+            bins[i] = label_to_id[key]
+
+    return bins, bin_labels
+
+
+def get_mondrian_bin_stats(bins, y_true=None):
+    """Compute sample counts per Mondrian bin.
+
+    Parameters
+    ----------
+    bins : np.ndarray
+        Bin assignments (-1 = fallback)
+    y_true : np.ndarray, optional
+        Target values for summary statistics
+
+    Returns
+    -------
+    pd.DataFrame
+        Statistics per bin
+    """
+    unique_bins = np.unique(bins)
+    rows = []
+    for b in unique_bins:
+        mask = bins == b
+        row = {'bin_id': b, 'n_samples': mask.sum()}
+        if y_true is not None:
+            row['mean_y'] = np.mean(y_true[mask])
+            row['std_y'] = np.std(y_true[mask])
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
+def create_mondrian_calibrated_explainer(
+    model, X_cal, y_cal, bins_cal, feature_names=None
+):
+    """Create a CalibratedExplainer with Mondrian (per-bin) calibration.
+
+    Parameters
+    ----------
+    model : fitted model
+        Trained model with .predict()
+    X_cal : np.ndarray
+        Calibration features
+    y_cal : np.ndarray
+        Calibration targets
+    bins_cal : np.ndarray
+        Mondrian bin IDs for calibration samples (must not contain -1;
+        filter out fallback samples before calling)
+    feature_names : list, optional
+        Feature names
+
+    Returns
+    -------
+    WrapCalibratedExplainer
+        Calibrated with per-bin nonconformity scores
+    """
+    from calibrated_explanations import WrapCalibratedExplainer
+
+    ce = WrapCalibratedExplainer(model)
+    ce.fit(X_cal, y_cal)
+    ce.calibrate(X_cal, y_cal, feature_names=feature_names, bins=bins_cal)
+    return ce
+
+
+def get_mondrian_prediction_intervals(
+    explainer_mondrian,
+    explainer_global,
+    X_test,
+    bins_test,
+    confidence: float = 0.90
+):
+    """Generate prediction intervals using Mondrian CP with global fallback.
+
+    Samples with valid bins use the Mondrian explainer (per-bin quantiles).
+    Samples with bin_id == -1 (e.g., night period) use the global explainer.
+
+    Parameters
+    ----------
+    explainer_mondrian : WrapCalibratedExplainer
+        Mondrian-calibrated explainer (with bins)
+    explainer_global : WrapCalibratedExplainer
+        Global-calibrated explainer (without bins, for fallback)
+    X_test : np.ndarray
+        Test features
+    bins_test : np.ndarray
+        Mondrian bin IDs for test samples (-1 = use global fallback)
+    confidence : float
+        Target coverage
+
+    Returns
+    -------
+    tuple
+        (y_pred, lower, upper) arrays
+    """
+    X_test = np.asarray(X_test)
+    bins_test = np.asarray(bins_test)
+
+    y_pred = np.zeros(len(X_test))
+    lower = np.zeros(len(X_test))
+    upper = np.zeros(len(X_test))
+
+    low_pct, high_pct = _confidence_to_percentiles(confidence)
+
+    # Mondrian samples (valid bins)
+    valid_mask = bins_test >= 0
+    if valid_mask.sum() > 0:
+        X_valid = X_test[valid_mask]
+        bins_valid = bins_test[valid_mask]
+
+        explanations = explainer_mondrian.explain_factual(
+            X_valid,
+            low_high_percentiles=(low_pct, high_pct),
+            bins=bins_valid
+        )
+
+        idx = 0
+        for exp in explanations:
+            pred = exp.prediction
+            valid_indices = np.where(valid_mask)[0]
+            y_pred[valid_indices[idx]] = pred['predict']
+            lower[valid_indices[idx]] = pred['low']
+            upper[valid_indices[idx]] = pred['high']
+            idx += 1
+
+    # Fallback samples (night / unknown bins)
+    fallback_mask = bins_test < 0
+    if fallback_mask.sum() > 0:
+        X_fallback = X_test[fallback_mask]
+
+        explanations = explainer_global.explain_factual(
+            X_fallback,
+            low_high_percentiles=(low_pct, high_pct)
+        )
+
+        idx = 0
+        for exp in explanations:
+            pred = exp.prediction
+            fallback_indices = np.where(fallback_mask)[0]
+            y_pred[fallback_indices[idx]] = pred['predict']
+            lower[fallback_indices[idx]] = pred['low']
+            upper[fallback_indices[idx]] = pred['high']
+            idx += 1
+
+    return y_pred, lower, upper
+
+
+def get_online_mondrian_prediction_intervals(
+    model,
+    X_stream: np.ndarray,
+    y_stream: np.ndarray,
+    bins_stream: np.ndarray,
+    X_cal_init: np.ndarray,
+    y_cal_init: np.ndarray,
+    bins_cal_init: np.ndarray,
+    confidence: float = 0.90,
+    window_size: int = None,
+    dates_stream: np.ndarray = None,
+    verbose: bool = True
+):
+    """Online Mondrian CP with sequential calibration updates.
+
+    Combines online recalibration (expanding/sliding window) with
+    Mondrian binning (per-category quantiles). Night-period samples
+    use global fallback at each update step.
+
+    Parameters
+    ----------
+    model : fitted model
+        Trained model (not retrained)
+    X_stream : np.ndarray
+        Test features in temporal order
+    y_stream : np.ndarray
+        True test values (revealed after prediction)
+    bins_stream : np.ndarray
+        Mondrian bin IDs for stream (-1 = fallback)
+    X_cal_init : np.ndarray
+        Initial calibration features
+    y_cal_init : np.ndarray
+        Initial calibration targets
+    bins_cal_init : np.ndarray
+        Initial calibration bin IDs (only valid bins, no -1)
+    confidence : float
+        Target coverage
+    window_size : int, optional
+        None = expanding, int = sliding window size
+    dates_stream : np.ndarray, optional
+        Dates for daily update batching
+    verbose : bool
+        Show progress bar
+
+    Returns
+    -------
+    tuple
+        (y_pred_all, lower_all, upper_all, running_coverages)
+    """
+    from calibrated_explanations import WrapCalibratedExplainer
+
+    X_stream = np.asarray(X_stream)
+    y_stream = np.asarray(y_stream)
+    bins_stream = np.asarray(bins_stream)
+    X_cal = np.copy(np.asarray(X_cal_init))
+    y_cal = np.copy(np.asarray(y_cal_init))
+    bins_cal = np.copy(np.asarray(bins_cal_init))
+
+    y_pred_all = np.zeros(len(X_stream))
+    lower_all = np.zeros(len(X_stream))
+    upper_all = np.zeros(len(X_stream))
+    running_coverages = []
+
+    low_pct, high_pct = _confidence_to_percentiles(confidence)
+
+    # Determine update points
+    if dates_stream is not None:
+        dates_stream = np.asarray(dates_stream)
+        unique_keys = sorted(set(dates_stream))
+        key_to_indices = {}
+        for i, k in enumerate(dates_stream):
+            key_to_indices.setdefault(k, []).append(i)
+    else:
+        unique_keys = [0]
+        key_to_indices = {0: list(range(len(X_stream)))}
+
+    desc = 'Online Mondrian CP (daily)' if dates_stream is not None else 'Online Mondrian CP'
+    iterator = tqdm(unique_keys, desc=desc) if verbose else unique_keys
+
+    for key in iterator:
+        indices = key_to_indices[key]
+        X_batch = X_stream[indices]
+        y_batch = y_stream[indices]
+        bins_batch = bins_stream[indices]
+
+        # Separate valid (Mondrian) and fallback samples in the batch
+        valid_mask_batch = bins_batch >= 0
+        fallback_mask_batch = bins_batch < 0
+
+        # --- Build Mondrian explainer from current calibration ---
+        # Only use valid-bin calibration samples for Mondrian
+        valid_cal_mask = bins_cal >= 0
+        X_cal_valid = X_cal[valid_cal_mask]
+        y_cal_valid = y_cal[valid_cal_mask]
+        bins_cal_valid = bins_cal[valid_cal_mask]
+
+        ce_mondrian = WrapCalibratedExplainer(model)
+        ce_mondrian.fit(X_cal_valid, y_cal_valid)
+        ce_mondrian.calibrate(X_cal_valid, y_cal_valid, bins=bins_cal_valid)
+
+        # --- Build global explainer for fallback ---
+        ce_global = WrapCalibratedExplainer(model)
+        ce_global.fit(X_cal, y_cal)
+        ce_global.calibrate(X_cal, y_cal)
+
+        # --- Predict valid-bin samples ---
+        if valid_mask_batch.sum() > 0:
+            valid_indices = [indices[j] for j in range(len(indices)) if valid_mask_batch[j]]
+            X_valid = X_batch[valid_mask_batch]
+            bins_valid = bins_batch[valid_mask_batch]
+
+            explanations = ce_mondrian.explain_factual(
+                X_valid,
+                low_high_percentiles=(low_pct, high_pct),
+                bins=bins_valid
+            )
+            for idx_pos, exp in enumerate(explanations):
+                pred = exp.prediction
+                gi = valid_indices[idx_pos]
+                y_pred_all[gi] = pred['predict']
+                lower_all[gi] = pred['low']
+                upper_all[gi] = pred['high']
+
+        # --- Predict fallback samples ---
+        if fallback_mask_batch.sum() > 0:
+            fallback_indices = [indices[j] for j in range(len(indices)) if fallback_mask_batch[j]]
+            X_fb = X_batch[fallback_mask_batch]
+
+            explanations = ce_global.explain_factual(
+                X_fb,
+                low_high_percentiles=(low_pct, high_pct)
+            )
+            for idx_pos, exp in enumerate(explanations):
+                pred = exp.prediction
+                gi = fallback_indices[idx_pos]
+                y_pred_all[gi] = pred['predict']
+                lower_all[gi] = pred['low']
+                upper_all[gi] = pred['high']
+
+        # --- Update calibration set ---
+        X_cal = np.vstack([X_cal, X_batch])
+        y_cal = np.concatenate([y_cal, y_batch])
+        bins_cal = np.concatenate([bins_cal, bins_batch])
+
+        if window_size is not None and len(y_cal) > window_size:
+            X_cal = X_cal[-window_size:]
+            y_cal = y_cal[-window_size:]
+            bins_cal = bins_cal[-window_size:]
+
+        # Running coverage
+        processed = np.where(
+            (y_pred_all != 0) | (lower_all != 0) | (upper_all != 0)
+        )[0]
+        if len(processed) > 0:
+            covered = ((y_stream[processed] >= lower_all[processed]) &
+                       (y_stream[processed] <= upper_all[processed]))
+            running_coverages.append(np.mean(covered))
+
+    return y_pred_all, lower_all, upper_all, running_coverages
+
+
+# =============================================================================
+# Normalized CP with DifficultyEstimator (crepes)
+# =============================================================================
+
+def create_difficulty_estimator(X_cal, y_cal, model, k=25, scaler=True, beta=0.01):
+    """Create and fit a DifficultyEstimator using KNN on calibration residuals.
+
+    The estimator learns how "difficult" each region of the feature space is
+    based on the calibration residuals. At prediction time, it assigns a
+    per-sample sigma that scales the conformal interval width.
+
+    Parameters
+    ----------
+    X_cal : np.ndarray
+        Calibration features
+    y_cal : np.ndarray
+        Calibration targets
+    model : fitted model
+        Trained model with .predict()
+    k : int
+        Number of neighbors for KNN difficulty estimation
+    scaler : bool
+        If True, normalize sigmas to [0, 1] range (+ beta)
+    beta : float
+        Small offset added to avoid division by zero
+
+    Returns
+    -------
+    DifficultyEstimator
+        Fitted estimator ready for .apply(X_test)
+    """
+    from crepes.extras import DifficultyEstimator
+
+    X_cal = np.asarray(X_cal)
+    y_cal = np.asarray(y_cal)
+
+    # Compute calibration residuals
+    y_cal_pred = model.predict(X_cal)
+    residuals_cal = np.abs(y_cal - y_cal_pred)
+
+    de = DifficultyEstimator()
+    de.fit(X=X_cal, residuals=residuals_cal, k=k, scaler=scaler, beta=beta)
+    return de
+
+
+def create_calibrated_explainer_with_difficulty(
+    model, X_cal, y_cal, difficulty_estimator, feature_names=None
+):
+    """Create a CalibratedExplainer with difficulty-based normalized CP.
+
+    Parameters
+    ----------
+    model : fitted model
+        Trained model
+    X_cal : np.ndarray
+        Calibration features
+    y_cal : np.ndarray
+        Calibration targets
+    difficulty_estimator : DifficultyEstimator
+        Fitted difficulty estimator from crepes
+    feature_names : list, optional
+        Feature names
+
+    Returns
+    -------
+    WrapCalibratedExplainer
+        Calibrated with per-sample adaptive intervals
+    """
+    from calibrated_explanations import WrapCalibratedExplainer
+
+    ce = WrapCalibratedExplainer(model)
+    ce.fit(X_cal, y_cal)
+    ce.calibrate(X_cal, y_cal, feature_names=feature_names,
+                 difficulty_estimator=difficulty_estimator)
+    return ce
